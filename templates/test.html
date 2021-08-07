@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Sample App</title>
+</head>
+<body>
+  <h2>book追加</h2>
+  <form method="post" action="/new">
+    <p>名前テスト<input type="text" name="title" size="30" placeholder="入力してください" ></p>
+    <p>内容テスト<input type="text" name="content" size="30" placeholder="入力してください" ></p>
+    <p><input type="submit" value="Send"></p>
+  </form>
+
+  <h2>本一覧</h2>
+  <table>
+    <tr>
+      <td>タイトル</td>
+      <td>内容</td>
+    </tr>
+    {{ range .articles }}
+      <tr>
+        <td>{{ .Title }}</td>
+        <td>{{ .Content }}</td>
+        <td>
+          <form method="post" action="/delete/{{.ID}}">
+            <button type="submit">削除</button>
+          </form>
+        </td>
+      </tr>
+    {{ end }}
+  </ul>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+version: "3"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: DockerFile
+    # command: /bin/sh -c "go run app/main.go"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ".:/go/src/app" # マウントディレクトリ
+    ports:
+      - "8080:8080" #golang webserver用のポート
+      - "5050:5050" #delve用のポート
+    depends_on:
+      - "db"
+    privileged: true # Delveで必要なので付与 セキュリティ面から本番環境では使うべきではない
+    command: dlv debug --headless --listen=:5050 --log
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: go_clean_arch
+      MYSQL_USER: go_clean_arch_test
+      MYSQL_PASSWORD: password
+      TZ: 'Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - 3356:3306
+
+volumes:
+  db-data:
+    driver: local

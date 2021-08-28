@@ -10,6 +10,7 @@ type Article struct {
 	gorm.Model
 	Title   string `json:"title"`
 	Content string `json:"content"`
+	Author  Author `json:"author"`
 	// Author  Author `json:"author"`
 	// UpdatedAt time.Time `json:"updated_at"`
 	// CreatedAt time.Time `json:"created_at"`

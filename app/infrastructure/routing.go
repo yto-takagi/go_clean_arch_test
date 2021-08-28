@@ -24,8 +24,10 @@ func (r *Routing) setRouting() {
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	delivery.GetAll(ctx)
 	// })
+
 	articleHandler := delivery.NewArticleHandler(r.DB)
 	r.Gin.GET("/", func(ctx *gin.Context) { articleHandler.GetAll(ctx) })
+	r.Gin.GET("/article", func(ctx *gin.Context) { articleHandler.GetById(ctx) })
 }
 
 func (r *Routing) Run() {

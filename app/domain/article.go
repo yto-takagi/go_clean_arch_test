@@ -1,16 +1,12 @@
 package domain
 
-import (
-	"github.com/jinzhu/gorm"
-)
-
 // struct
 type Article struct {
 	// gorm.ModelはID, CreatedAt, UpdatedAt, DeletedAtをフィールドに持つ構造体
-	gorm.Model
+	// gorm.Model
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	Author  Author `json:"author"`
+	// Author  Author `json:"author"`
 	// Author  Author `json:"author"`
 	// UpdatedAt time.Time `json:"updated_at"`
 	// CreatedAt time.Time `json:"created_at"`

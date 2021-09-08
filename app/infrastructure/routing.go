@@ -22,7 +22,7 @@ func NewRouting(db *DB) *Routing {
 	r.Gin.Use(cors.New(cors.Config{
 		// 許可アクセス元
 		AllowOrigins: []string{
-			"http://localhost:61092",
+			"http://localhost:49719",
 		},
 		// アクセス許可HTTPメソッド(以下PUTDELETEアクセス不可)
 		AllowMethods: []string{

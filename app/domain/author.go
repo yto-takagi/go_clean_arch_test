@@ -1,8 +1,10 @@
 package domain
 
-import "github.com/jinzhu/gorm"
+import "time"
 
 type Author struct {
-	gorm.Model
-	Name string `json:"name"`
+	Id        int       `json:"id"`
+	Name      string    `json:"name"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"created_at"`
 }

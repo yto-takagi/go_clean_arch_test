@@ -22,7 +22,7 @@ func NewRouting(db *DB) *Routing {
 	r.Gin.Use(cors.New(cors.Config{
 		// 許可アクセス元
 		AllowOrigins: []string{
-			"http://localhost:49719",
+			"http://localhost:51826",
 		},
 		// アクセス許可HTTPメソッド(以下PUTDELETEアクセス不可)
 		AllowMethods: []string{
@@ -56,6 +56,8 @@ func (r *Routing) setRouting() {
 	articleHandler := delivery.NewArticleHandler(r.DB)
 	r.Gin.GET("/", func(ctx *gin.Context) { articleHandler.GetAll(ctx) })
 	r.Gin.GET("/article", func(ctx *gin.Context) { articleHandler.GetById(ctx) })
+	r.Gin.POST("/article/input", func(ctx *gin.Context) { articleHandler.Input(ctx) })
+	r.Gin.POST("/article/update", func(ctx *gin.Context) { articleHandler.Update(ctx) })
 }
 
 func (r *Routing) Run() {

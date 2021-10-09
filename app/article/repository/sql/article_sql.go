@@ -76,3 +76,17 @@ func Update(db *gorm.DB, articleForm *form.ArticleForm) {
 	log.Println(articleForm)
 
 }
+
+// 削除
+func Delete(db *gorm.DB, articleForm *form.ArticleForm) {
+	db.Debug().Table("articles").Where("id = ?", articleForm.Id).Delete(&articleForm)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
+		zap.String("method", "Delete"),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+
+}

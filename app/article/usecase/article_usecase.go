@@ -111,3 +111,22 @@ func (usecase *ArticleUsecase) Update(article *domain.Article) {
 	)
 	log.Println(article)
 }
+
+// 削除
+func (usecase *ArticleUsecase) Delete(id int) {
+	db := usecase.DB.Connect()
+	// defer db.Close()
+
+	ArticleForm := form.ArticleForm{}
+	ArticleForm.Id = id
+	sql.Delete(db, &ArticleForm)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+		zap.String("method", "Delete"),
+		zap.Int("param id", id),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+}

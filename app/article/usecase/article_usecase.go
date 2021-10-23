@@ -55,6 +55,27 @@ func (usecase *ArticleUsecase) GetById(id int) domain.Article {
 	return articleByid
 }
 
+// Id、ユーザーID指定
+func (usecase *ArticleUsecase) GetByIdAndUserId(id int, userId int) domain.Article {
+	db := usecase.DB.Connect()
+	// defer db.Close()
+
+	var article domain.Article
+	articleByIdAndUserId := sql.GetByIdAndUserId(db, article, id, userId)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+		zap.String("method", "GetById"),
+		zap.Int("param id", id),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+	log.Println(articleByIdAndUserId)
+
+	return articleByIdAndUserId
+}
+
 // 新規登録
 func (usecase *ArticleUsecase) Input(article *domain.Article) {
 	db := usecase.DB.Connect()

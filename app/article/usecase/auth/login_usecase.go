@@ -15,7 +15,7 @@ type LoginUsecase struct {
 	DB usecase.DBRepository
 }
 
-// カテゴリー名検索
+// ログイン
 func (usecase *LoginUsecase) GetByEmail(email string) domain.User {
 	db := usecase.DB.Connect()
 	// defer db.Close()
@@ -23,7 +23,7 @@ func (usecase *LoginUsecase) GetByEmail(email string) domain.User {
 	var user domain.User
 	var login auth.Login
 	login.Email = email
-	userInfo := sql.GetByEmail(db, login, user)
+	userInfo := sql.GetByEmail(db, login.Email, user)
 
 	// log
 	oldTime := time.Now()

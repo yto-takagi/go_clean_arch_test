@@ -26,7 +26,7 @@ func NewRouting(db *DB) *Routing {
 	r.Gin.Use(cors.New(cors.Config{
 		// 許可アクセス元
 		AllowOrigins: []string{
-			"http://localhost:56733",
+			"http://localhost:52434",
 		},
 		// AllowAllOrigins: true,
 		// アクセス許可HTTPメソッド(以下PUT,DELETEアクセス不可)
@@ -74,9 +74,10 @@ func (r *Routing) setRouting() {
 	// 	delivery.GetAll(ctx)
 	// })
 
+	signupHandler := authDelivery.NewSignUpHandler(r.DB)
 	loginHandler := authDelivery.NewLoginHandler(r.DB)
 	articleHandler := delivery.NewArticleHandler(r.DB)
-	// ログイン用のhandler
+	r.Gin.POST("/signup", func(ctx *gin.Context) { signupHandler.SignUp(ctx) })
 	r.Gin.POST("/login", func(ctx *gin.Context) { loginHandler.Login(ctx) })
 	r.Gin.POST("/logout", func(ctx *gin.Context) { authDelivery.Logout(ctx) })
 	// 認証済のみアクセス可能なグループ

@@ -196,6 +196,14 @@ func (handler *ArticleHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
+	// ログインユーザーID且つ、記事ID データが存在しなければ、302で返す
+	user := getLoginUser(ctx)
+	articleByIdAndUserId := handler.Usecase.GetByIdAndUserId(article.Id, user.Id)
+	if articleByIdAndUserId.Id == 0 {
+		ctx.JSON(302, NewH("Bad Request", article))
+		return
+	}
+
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()

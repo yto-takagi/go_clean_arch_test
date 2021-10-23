@@ -14,12 +14,12 @@ type AuthorUsecase struct {
 }
 
 // カテゴリー名検索
-func (usecase *AuthorUsecase) GetByName(name string) domain.Author {
+func (usecase *AuthorUsecase) GetByName(name string, userId int) domain.Author {
 	db := usecase.DB.Connect()
 	// defer db.Close()
 
 	var author domain.Author
-	authorByName := sql.GetByAuthorName(db, author, name)
+	authorByName := sql.GetByAuthorName(db, author, name, userId)
 
 	// log
 	oldTime := time.Now()
@@ -35,7 +35,7 @@ func (usecase *AuthorUsecase) GetByName(name string) domain.Author {
 }
 
 // 新規登録
-func (usecase *AuthorUsecase) Input(author *domain.Author) {
+func (usecase *AuthorUsecase) Input(author *domain.Author) domain.Author {
 	db := usecase.DB.Connect()
 	// defer db.Close()
 
@@ -53,6 +53,7 @@ func (usecase *AuthorUsecase) Input(author *domain.Author) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 	log.Println(author)
+	return *author
 }
 
 // 更新

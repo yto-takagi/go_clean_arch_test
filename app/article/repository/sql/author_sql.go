@@ -10,8 +10,11 @@ import (
 )
 
 // カテゴリ名に紐付いたデータ取得
-func GetByAuthorName(db *gorm.DB, author domain.Author, name string) domain.Author {
-	db.Debug().Table("authors").Select("authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").Where("authors.name = ?", name).Scan(&author)
+func GetByAuthorName(db *gorm.DB, author domain.Author, name string, userId int) domain.Author {
+	db.Debug().Table("authors").
+		Select("authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
+		Where("authors.name = ? AND authors.user_id = ?", name, userId).
+		Scan(&author)
 
 	// log
 	oldTime := time.Now()

@@ -11,10 +11,16 @@ import (
 )
 
 // 全件取得
-func GetAll(db *gorm.DB, article []domain.Article) []domain.Article {
+func GetAll(db *gorm.DB, article []domain.Article, userId int) []domain.Article {
 	// db.Order("created_at asc").Find(&articles)
 	// db.Debug().Table("article").Find(&article)
-	db.Debug().Table("articles").Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").Joins("INNER JOIN authors ON articles.author_id = authors.id").Scan(&article)
+	db.
+		Debug().
+		Table("articles").
+		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
+		Joins("INNER JOIN authors ON articles.author_id = authors.id").
+		Where("authors.user_id = ?", userId).
+		Scan(&article)
 
 	// log
 	oldTime := time.Now()
@@ -30,7 +36,13 @@ func GetAll(db *gorm.DB, article []domain.Article) []domain.Article {
 
 // Idに紐付いたデータ取得
 func GetById(db *gorm.DB, article domain.Article, id int) domain.Article {
-	db.Debug().Table("articles").Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").Joins("INNER JOIN authors ON articles.author_id = authors.id").Where("articles.id = ?", id).Scan(&article)
+	db.
+		Debug().
+		Table("articles").
+		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
+		Joins("INNER JOIN authors ON articles.author_id = authors.id").
+		Where("articles.id = ?", id).
+		Scan(&article)
 
 	// log
 	oldTime := time.Now()
@@ -48,7 +60,10 @@ func GetById(db *gorm.DB, article domain.Article, id int) domain.Article {
 
 // 新規登録
 func Input(db *gorm.DB, articleForm *form.ArticleForm) {
-	db.Debug().Table("articles").Create(&articleForm)
+	db.
+		Debug().
+		Table("articles").
+		Create(&articleForm)
 
 	// log
 	oldTime := time.Now()
@@ -64,7 +79,17 @@ func Input(db *gorm.DB, articleForm *form.ArticleForm) {
 // 更新
 func Update(db *gorm.DB, articleForm *form.ArticleForm) {
 	// TODO 更新SQL
-	db.Debug().Model(&articleForm).Table("articles").Omit("createdAt").Where("id = ?", articleForm.Id).Updates(map[string]interface{}{"title": articleForm.Title, "content": articleForm.Content, "updated_at": articleForm.UpdatedAt, "author_id": articleForm.AuthorId})
+	db.
+		Debug().
+		Model(&articleForm).
+		Table("articles").
+		Omit("createdAt").
+		Where("id = ?", articleForm.Id).
+		Updates(map[string]interface{}{
+			"title":      articleForm.Title,
+			"content":    articleForm.Content,
+			"updated_at": articleForm.UpdatedAt,
+			"author_id":  articleForm.AuthorId})
 
 	// log
 	oldTime := time.Now()
@@ -79,7 +104,11 @@ func Update(db *gorm.DB, articleForm *form.ArticleForm) {
 
 // 削除
 func Delete(db *gorm.DB, articleForm *form.ArticleForm) {
-	db.Debug().Table("articles").Where("id = ?", articleForm.Id).Delete(&articleForm)
+	db.
+		Debug().
+		Table("articles").
+		Where("id = ?", articleForm.Id).
+		Delete(&articleForm)
 
 	// log
 	oldTime := time.Now()

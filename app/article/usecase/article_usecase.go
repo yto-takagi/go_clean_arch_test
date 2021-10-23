@@ -15,12 +15,12 @@ type ArticleUsecase struct {
 }
 
 // 全件取得
-func (usecase *ArticleUsecase) GetAll() []domain.Article {
+func (usecase *ArticleUsecase) GetAll(userId int) []domain.Article {
 	db := usecase.DB.Connect()
 	// defer db.Close()
 
 	var article []domain.Article
-	articles := sql.GetAll(db, article)
+	articles := sql.GetAll(db, article, userId)
 
 	// log
 	oldTime := time.Now()

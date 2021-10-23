@@ -1,16 +1,23 @@
 package delivery
 
 import (
+	"encoding/json"
 	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/article/usecase"
 	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/domain/auth"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/koron/go-dproxy"
 	"go.uber.org/zap"
 )
+
+var LoginInfo auth.SessionInfo
 
 type ArticleHandler struct {
 	Usecase       usecase.ArticleUsecase
@@ -37,7 +44,12 @@ func NewArticleHandler(db database.DB) *ArticleHandler {
 // }
 // 全件取得
 func (handler *ArticleHandler) GetAll(ctx *gin.Context) {
-	articles := handler.Usecase.GetAll()
+
+	user := getLoginUser(ctx)
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○User.ID○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(user.Id)
+
+	articles := handler.Usecase.GetAll(user.Id)
 	// ctx.JSON(res.StatusCode, NewH("success", articles))
 	if len(articles) < 0 || articles == nil {
 		ctx.JSON(500, NewH("no articles", articles))
@@ -69,7 +81,6 @@ func (handler *ArticleHandler) GetById(ctx *gin.Context) {
 
 // 新規登録
 func (handler *ArticleHandler) Input(ctx *gin.Context) {
-
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
@@ -85,9 +96,11 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 		return
 	}
 
-	// TODO カテゴリーが変わってる場合
+	user := getLoginUser(ctx)
+	article.Author.UserId = user.Id
+
 	// カテゴリー検索(カテゴリー名で)
-	authorByName := handler.AuthorUsecase.GetByName(article.Author.Name)
+	authorByName := handler.AuthorUsecase.GetByName(article.Author.Name, article.Author.UserId)
 	// TODO 空チェックできてる？
 	if authorByName.Id == 0 {
 		// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
@@ -96,7 +109,7 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 			zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
 			zap.Duration("elapsed", time.Now().Sub(oldTime)),
 		)
-		handler.AuthorUsecase.Input(&article.Author)
+		authorByName = handler.AuthorUsecase.Input(&article.Author)
 	} else {
 		// カテゴリー存在したらそのIdで記事更新
 		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
@@ -107,8 +120,8 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 		// handler.AuthorUsecase.Update(&article.Author)
 	}
 
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(&article)
+	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorByName.Id■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+	log.Println(authorByName.Id)
 
 	article.Author.Id = authorByName.Id
 	handler.Usecase.Input(&article)
@@ -137,9 +150,12 @@ func (handler *ArticleHandler) Update(ctx *gin.Context) {
 		return
 	}
 
+	user := getLoginUser(ctx)
+	article.Author.UserId = user.Id
+
 	// TODO カテゴリーが変わってる場合
 	// カテゴリー検索(カテゴリー名で)
-	authorByName := handler.AuthorUsecase.GetByName(article.Author.Name)
+	authorByName := handler.AuthorUsecase.GetByName(article.Author.Name, article.Author.UserId)
 	// TODO 空チェックできてる？
 	if authorByName.Id == 0 {
 		// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
@@ -195,4 +211,39 @@ func (handler *ArticleHandler) Delete(ctx *gin.Context) {
 	// 	return
 	// }
 	ctx.JSON(200, NewH("success", article.Id))
+}
+
+func getLoginUser(ctx *gin.Context) domain.User {
+	accessToken := ctx.Request.Header.Get("accessToken")
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(ctx.Request.Header)
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○accessToken○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(accessToken)
+
+	testCookie, _ := ctx.Cookie("testCookie")
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○testCookie○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(testCookie)
+
+	session := sessions.Default(ctx)
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(session.Get(accessToken))
+	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
+	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
+
+	var loginInfo domain.User
+	if err != nil {
+		ctx.Status(http.StatusUnauthorized)
+		ctx.Abort()
+	} else {
+		// Json文字列のアンマーシャル
+		err := json.Unmarshal([]byte(loginUserJson), &loginInfo)
+		if err != nil {
+			ctx.Status(http.StatusUnauthorized)
+			ctx.Abort()
+		} else {
+			ctx.Next()
+		}
+	}
+	return loginInfo
+
 }

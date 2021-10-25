@@ -82,6 +82,34 @@ func GetByIdAndUserId(db *gorm.DB, article domain.Article, id int, userId int) d
 
 }
 
+// titleとcontentを曖昧検索
+func SearchContent(db *gorm.DB, articles []domain.Article, searchContent string, userId int) []domain.Article {
+	db.
+		Debug().
+		Table("articles").
+		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
+		Joins("INNER JOIN authors ON articles.author_id = authors.id").
+		Where("authors.user_id = ? AND (articles.title LIKE ? OR articles.content LIKE ?)",
+			userId,
+			"%"+searchContent+"%",
+			"%"+searchContent+"%",
+		).
+		Scan(&articles)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
+		zap.String("method", "SearchContent"),
+		zap.String("param searchContent", searchContent),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+	log.Println(articles)
+
+	return articles
+
+}
+
 // 新規登録
 func Input(db *gorm.DB, articleForm *form.ArticleForm) {
 	db.

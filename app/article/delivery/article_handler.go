@@ -52,7 +52,7 @@ func (handler *ArticleHandler) GetAll(ctx *gin.Context) {
 	articles := handler.Usecase.GetAll(user.Id)
 	// ctx.JSON(res.StatusCode, NewH("success", articles))
 	if len(articles) < 0 || articles == nil {
-		ctx.JSON(500, NewH("no articles", articles))
+		ctx.JSON(200, NewH("no articles", articles))
 		return
 	}
 	ctx.JSON(200, NewH("success", articles))
@@ -77,6 +77,30 @@ func (handler *ArticleHandler) GetById(ctx *gin.Context) {
 	// 	return
 	// }
 	ctx.JSON(200, NewH("success", article))
+}
+
+// 検索
+func (handler *ArticleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
+		zap.String("method", "GetLikeByTitleAndContent"),
+		zap.String("param searchContent", ctx.Query("content")),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+	user := getLoginUser(ctx)
+
+	articles := handler.Usecase.GetLikeByTitleAndContent(ctx.Query("content"), user.Id)
+	// if article == nil {
+	// 	ctx.JSON(500, NewH("no article", article))
+	// 	return
+	// }
+	if len(articles) == 0 || articles == nil || articles[0].Id == 0 {
+		ctx.JSON(200, NewH("no articles", nil))
+		return
+	}
+	ctx.JSON(200, NewH("success", articles))
 }
 
 // 新規登録

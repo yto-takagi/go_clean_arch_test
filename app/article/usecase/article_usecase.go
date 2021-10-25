@@ -76,6 +76,27 @@ func (usecase *ArticleUsecase) GetByIdAndUserId(id int, userId int) domain.Artic
 	return articleByIdAndUserId
 }
 
+// 検索
+func (usecase *ArticleUsecase) GetLikeByTitleAndContent(searchContent string, userId int) []domain.Article {
+	db := usecase.DB.Connect()
+	// defer db.Close()
+
+	var article []domain.Article
+	articles := sql.SearchContent(db, article, searchContent, userId)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+		zap.String("method", "GetLikeByTitleAndContent"),
+		zap.String("param searchContent", searchContent),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+	log.Println(articles)
+
+	return articles
+}
+
 // 新規登録
 func (usecase *ArticleUsecase) Input(article *domain.Article) {
 	db := usecase.DB.Connect()

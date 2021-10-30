@@ -82,6 +82,30 @@ func GetByIdAndUserId(db *gorm.DB, article domain.Article, id int, userId int) d
 
 }
 
+// authorId、ユーザーIdに紐付いたデータ取得
+func GetByAuthorIdAndUserId(db *gorm.DB, articles []domain.Article, id int, userId int) []domain.Article {
+	db.
+		Debug().
+		Table("articles").
+		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
+		Joins("INNER JOIN authors ON articles.author_id = authors.id").
+		Where("authors.id = ? AND authors.user_id = ?", id, userId).
+		Scan(&articles)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
+		zap.String("method", "GetByAuthorIdAndUserId"),
+		zap.Int("param id", id),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+	log.Println(articles)
+
+	return articles
+
+}
+
 // titleとcontentを曖昧検索
 func SearchContent(db *gorm.DB, articles []domain.Article, searchContent string, userId int) []domain.Article {
 	db.
@@ -169,5 +193,23 @@ func Delete(db *gorm.DB, articleForm *form.ArticleForm) {
 		zap.String("method", "Delete"),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+}
 
+// 削除(authorId指定)
+func DeleteByAuthorId(db *gorm.DB, articleForm *form.ArticleForm) {
+	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■articleForm.AuthorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+	log.Println(articleForm.AuthorId)
+	db.
+		Debug().
+		Table("articles").
+		Where("author_id = ?", articleForm.AuthorId).
+		Delete(&articleForm)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
+		zap.String("method", "DeleteByAuthorId"),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
 }

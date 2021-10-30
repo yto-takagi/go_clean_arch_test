@@ -67,7 +67,28 @@ func (usecase *ArticleUsecase) GetByIdAndUserId(id int, userId int) domain.Artic
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
 	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetById"),
+		zap.String("method", "GetByIdAndUserId"),
+		zap.Int("param id", id),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+	log.Println(articleByIdAndUserId)
+
+	return articleByIdAndUserId
+}
+
+// authorId、ユーザーID指定
+func (usecase *ArticleUsecase) GetByAuthorIdAndUserId(id int, userId int) []domain.Article {
+	db := usecase.DB.Connect()
+	// defer db.Close()
+
+	var articles []domain.Article
+	articleByIdAndUserId := sql.GetByAuthorIdAndUserId(db, articles, id, userId)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+		zap.String("method", "GetByAuthorIdAndUserId"),
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
@@ -169,6 +190,27 @@ func (usecase *ArticleUsecase) Delete(id int) {
 	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
 		zap.String("method", "Delete"),
 		zap.Int("param id", id),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+}
+
+// 削除(authorId指定)
+func (usecase *ArticleUsecase) DeleteByAuthor(authorId int) {
+	db := usecase.DB.Connect()
+	// defer db.Close()
+
+	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+	log.Println(authorId)
+	ArticleForm := form.ArticleForm{}
+	ArticleForm.AuthorId = authorId
+	sql.DeleteByAuthorId(db, &ArticleForm)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+		zap.String("method", "DeleteByAuthor"),
+		zap.Int("param authorId", authorId),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 }

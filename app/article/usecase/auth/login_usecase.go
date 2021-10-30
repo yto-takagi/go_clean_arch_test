@@ -1,13 +1,18 @@
 package auth
 
 import (
+	"encoding/json"
 	sql "go_clean_arch_test/app/article/repository/sql/auth"
 	"go_clean_arch_test/app/article/usecase"
 	"go_clean_arch_test/app/domain"
 	auth "go_clean_arch_test/app/domain/auth"
 	"log"
+	"net/http"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"github.com/koron/go-dproxy"
 	"go.uber.org/zap"
 )
 
@@ -36,4 +41,39 @@ func (usecase *LoginUsecase) GetByEmail(email string) domain.User {
 	log.Println(userInfo)
 
 	return userInfo
+}
+
+func (usecase *LoginUsecase) GetLoginUser(ctx *gin.Context) domain.User {
+	accessToken := ctx.Request.Header.Get("accessToken")
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(ctx.Request.Header)
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○accessToken○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(accessToken)
+
+	testCookie, _ := ctx.Cookie("testCookie")
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○testCookie○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(testCookie)
+
+	session := sessions.Default(ctx)
+	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	log.Println(session.Get(accessToken))
+	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
+	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
+
+	var loginInfo domain.User
+	if err != nil {
+		ctx.Status(http.StatusUnauthorized)
+		ctx.Abort()
+	} else {
+		// Json文字列のアンマーシャル
+		err := json.Unmarshal([]byte(loginUserJson), &loginInfo)
+		if err != nil {
+			ctx.Status(http.StatusUnauthorized)
+			ctx.Abort()
+		} else {
+			ctx.Next()
+		}
+	}
+	return loginInfo
+
 }

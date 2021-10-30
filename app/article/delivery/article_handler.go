@@ -1,27 +1,24 @@
 package delivery
 
 import (
-	"encoding/json"
 	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/article/usecase"
+	loginUsecase "go_clean_arch_test/app/article/usecase/auth"
 	"go_clean_arch_test/app/domain"
-	"go_clean_arch_test/app/domain/auth"
 	"log"
-	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/koron/go-dproxy"
 	"go.uber.org/zap"
 )
 
-var LoginInfo auth.SessionInfo
+// var LoginInfo auth.SessionInfo
 
 type ArticleHandler struct {
 	Usecase       usecase.ArticleUsecase
 	AuthorUsecase usecase.AuthorUsecase
+	LoginUsecase  loginUsecase.LoginUsecase
 }
 
 func NewArticleHandler(db database.DB) *ArticleHandler {
@@ -30,6 +27,9 @@ func NewArticleHandler(db database.DB) *ArticleHandler {
 			DB: &database.DBRepository{DB: db},
 		},
 		AuthorUsecase: usecase.AuthorUsecase{
+			DB: &database.DBRepository{DB: db},
+		},
+		LoginUsecase: loginUsecase.LoginUsecase{
 			DB: &database.DBRepository{DB: db},
 		},
 	}
@@ -45,7 +45,7 @@ func NewArticleHandler(db database.DB) *ArticleHandler {
 // 全件取得
 func (handler *ArticleHandler) GetAll(ctx *gin.Context) {
 
-	user := getLoginUser(ctx)
+	user := handler.LoginUsecase.GetLoginUser(ctx)
 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○User.ID○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
 	log.Println(user.Id)
 
@@ -79,6 +79,28 @@ func (handler *ArticleHandler) GetById(ctx *gin.Context) {
 	ctx.JSON(200, NewH("success", article))
 }
 
+// 詳細取得(authorId,ユーザーid指定)
+func (handler *ArticleHandler) GetByAuthorId(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Query("id"))
+	user := handler.LoginUsecase.GetLoginUser(ctx)
+
+	// log
+	oldTime := time.Now()
+	logger, _ := zap.NewProduction()
+	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
+		zap.String("method", "GetByAuthorId"),
+		zap.Int("param id", id),
+		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	)
+
+	article := handler.Usecase.GetByAuthorIdAndUserId(id, user.Id)
+	// if article == nil {
+	// 	ctx.JSON(500, NewH("no article", article))
+	// 	return
+	// }
+	ctx.JSON(200, NewH("success", article))
+}
+
 // 検索
 func (handler *ArticleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
 	// log
@@ -89,7 +111,7 @@ func (handler *ArticleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
 		zap.String("param searchContent", ctx.Query("content")),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	user := getLoginUser(ctx)
+	user := handler.LoginUsecase.GetLoginUser(ctx)
 
 	articles := handler.Usecase.GetLikeByTitleAndContent(ctx.Query("content"), user.Id)
 	// if article == nil {
@@ -120,7 +142,7 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 		return
 	}
 
-	user := getLoginUser(ctx)
+	user := handler.LoginUsecase.GetLoginUser(ctx)
 	article.Author.UserId = user.Id
 
 	// カテゴリー検索(カテゴリー名で)
@@ -174,7 +196,7 @@ func (handler *ArticleHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	user := getLoginUser(ctx)
+	user := handler.LoginUsecase.GetLoginUser(ctx)
 	article.Author.UserId = user.Id
 
 	// TODO カテゴリーが変わってる場合
@@ -221,7 +243,7 @@ func (handler *ArticleHandler) Delete(ctx *gin.Context) {
 	}
 
 	// ログインユーザーID且つ、記事ID データが存在しなければ、302で返す
-	user := getLoginUser(ctx)
+	user := handler.LoginUsecase.GetLoginUser(ctx)
 	articleByIdAndUserId := handler.Usecase.GetByIdAndUserId(article.Id, user.Id)
 	if articleByIdAndUserId.Id == 0 {
 		ctx.JSON(302, NewH("Bad Request", article))
@@ -245,37 +267,37 @@ func (handler *ArticleHandler) Delete(ctx *gin.Context) {
 	ctx.JSON(200, NewH("success", article.Id))
 }
 
-func getLoginUser(ctx *gin.Context) domain.User {
-	accessToken := ctx.Request.Header.Get("accessToken")
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(ctx.Request.Header)
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○accessToken○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(accessToken)
+// func getLoginUser(ctx *gin.Context) domain.User {
+// 	accessToken := ctx.Request.Header.Get("accessToken")
+// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+// 	log.Println(ctx.Request.Header)
+// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○accessToken○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+// 	log.Println(accessToken)
 
-	testCookie, _ := ctx.Cookie("testCookie")
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○testCookie○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(testCookie)
+// 	testCookie, _ := ctx.Cookie("testCookie")
+// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○testCookie○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+// 	log.Println(testCookie)
 
-	session := sessions.Default(ctx)
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(session.Get(accessToken))
-	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
-	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
+// 	session := sessions.Default(ctx)
+// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+// 	log.Println(session.Get(accessToken))
+// 	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
+// 	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
 
-	var loginInfo domain.User
-	if err != nil {
-		ctx.Status(http.StatusUnauthorized)
-		ctx.Abort()
-	} else {
-		// Json文字列のアンマーシャル
-		err := json.Unmarshal([]byte(loginUserJson), &loginInfo)
-		if err != nil {
-			ctx.Status(http.StatusUnauthorized)
-			ctx.Abort()
-		} else {
-			ctx.Next()
-		}
-	}
-	return loginInfo
+// 	var loginInfo domain.User
+// 	if err != nil {
+// 		ctx.Status(http.StatusUnauthorized)
+// 		ctx.Abort()
+// 	} else {
+// 		// Json文字列のアンマーシャル
+// 		err := json.Unmarshal([]byte(loginUserJson), &loginInfo)
+// 		if err != nil {
+// 			ctx.Status(http.StatusUnauthorized)
+// 			ctx.Abort()
+// 		} else {
+// 			ctx.Next()
+// 		}
+// 	}
+// 	return loginInfo
 
-}
+// }

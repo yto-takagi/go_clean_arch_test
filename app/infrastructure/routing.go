@@ -26,7 +26,7 @@ func NewRouting(db *DB) *Routing {
 	r.Gin.Use(cors.New(cors.Config{
 		// 許可アクセス元
 		AllowOrigins: []string{
-			"http://localhost:54386",
+			"http://localhost:62420",
 		},
 		// AllowAllOrigins: true,
 		// アクセス許可HTTPメソッド(以下PUT,DELETEアクセス不可)
@@ -77,6 +77,8 @@ func (r *Routing) setRouting() {
 	signupHandler := authDelivery.NewSignUpHandler(r.DB)
 	loginHandler := authDelivery.NewLoginHandler(r.DB)
 	articleHandler := delivery.NewArticleHandler(r.DB)
+	authorHandler := delivery.NewAuthorHandler(r.DB)
+
 	r.Gin.POST("/signup", func(ctx *gin.Context) { signupHandler.SignUp(ctx) })
 	r.Gin.POST("/login", func(ctx *gin.Context) { loginHandler.Login(ctx) })
 	r.Gin.POST("/logout", func(ctx *gin.Context) { authDelivery.Logout(ctx) })
@@ -86,10 +88,16 @@ func (r *Routing) setRouting() {
 	{
 		r.Gin.GET("/", func(ctx *gin.Context) { articleHandler.GetAll(ctx) })
 		r.Gin.GET("/article", func(ctx *gin.Context) { articleHandler.GetById(ctx) })
+		r.Gin.GET("/article/author", func(ctx *gin.Context) { articleHandler.GetByAuthorId(ctx) })
 		r.Gin.GET("/article/search", func(ctx *gin.Context) { articleHandler.GetLikeByTitleAndContent(ctx) })
 		r.Gin.POST("/article/input", func(ctx *gin.Context) { articleHandler.Input(ctx) })
 		r.Gin.POST("/article/update", func(ctx *gin.Context) { articleHandler.Update(ctx) })
 		r.Gin.POST("/article/delete", func(ctx *gin.Context) { articleHandler.Delete(ctx) })
+
+		r.Gin.GET("/author", func(ctx *gin.Context) { authorHandler.GetAllAuthor(ctx) })
+		r.Gin.POST("/author/input", func(ctx *gin.Context) { authorHandler.InputAuthor(ctx) })
+		r.Gin.POST("/author/update", func(ctx *gin.Context) { authorHandler.UpdateAuthor(ctx) })
+		r.Gin.POST("/author/delete", func(ctx *gin.Context) { authorHandler.DeleteAuthor(ctx) })
 	}
 }
 

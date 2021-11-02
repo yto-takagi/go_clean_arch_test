@@ -119,7 +119,7 @@ func (handler *ArticleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
 	// 	return
 	// }
 	if len(articles) == 0 || articles == nil || articles[0].Id == 0 {
-		ctx.JSON(200, NewH("no articles", nil))
+		ctx.JSON(200, NewH("no articles", articles))
 		return
 	}
 	ctx.JSON(200, NewH("success", articles))

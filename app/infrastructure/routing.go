@@ -3,6 +3,10 @@ package infrastructure
 import (
 	"go_clean_arch_test/app/article/delivery"
 	authDelivery "go_clean_arch_test/app/article/delivery/auth"
+	"go_clean_arch_test/app/article/repository/sql"
+	authSql "go_clean_arch_test/app/article/repository/sql/auth"
+	"go_clean_arch_test/app/article/usecase"
+	authUsecase "go_clean_arch_test/app/article/usecase/auth"
 	middleware "go_clean_arch_test/app/infrastructure/auth"
 	"time"
 
@@ -26,7 +30,7 @@ func NewRouting(db *DB) *Routing {
 	r.Gin.Use(cors.New(cors.Config{
 		// 許可アクセス元
 		AllowOrigins: []string{
-			"http://localhost:57865",
+			"http://localhost:62622",
 		},
 		// AllowAllOrigins: true,
 		// アクセス許可HTTPメソッド(以下PUT,DELETEアクセス不可)
@@ -70,16 +74,26 @@ func NewRouting(db *DB) *Routing {
 }
 
 func (r *Routing) setRouting() {
-	// router.GET("/", func(ctx *gin.Context) {
-	// 	delivery.GetAll(ctx)
-	// })
 
-	signupHandler := authDelivery.NewSignUpHandler(r.DB)
-	loginHandler := authDelivery.NewLoginHandler(r.DB)
-	articleHandler := delivery.NewArticleHandler(r.DB)
-	authorHandler := delivery.NewAuthorHandler(r.DB)
+	// repository
+	aritcleRepository := sql.NewArticleRepository(SqlConnect())
+	authorRepository := sql.NewAuthorRepository(SqlConnect())
+	signUpRepository := authSql.NewSignUpRepository(SqlConnect())
+	loginRepository := authSql.NewLoginRepository(SqlConnect())
 
-	r.Gin.POST("/signup", func(ctx *gin.Context) { signupHandler.SignUp(ctx) })
+	// usecase
+	articleUsecase := usecase.NewArticleUsecase(aritcleRepository)
+	authoreUsecase := usecase.NewAuthorUsecase(authorRepository)
+	signUpUsecase := authUsecase.NewSignUpUsecase(signUpRepository, loginRepository)
+	loginUsecase := authUsecase.NewLoginUsecase(loginRepository)
+
+	// handler
+	articleHandler := delivery.NewArticleHandler(articleUsecase, authoreUsecase, loginUsecase)
+	authorHandler := delivery.NewAuthorHandler(articleUsecase, authoreUsecase, loginUsecase)
+	signUpHandler := authDelivery.NewSignUpHandler(signUpUsecase)
+	loginHandler := authDelivery.NewLoginHandler(loginUsecase)
+
+	r.Gin.POST("/signup", func(ctx *gin.Context) { signUpHandler.SignUp(ctx) })
 	r.Gin.POST("/login", func(ctx *gin.Context) { loginHandler.Login(ctx) })
 	r.Gin.POST("/logout", func(ctx *gin.Context) { authDelivery.Logout(ctx) })
 	// 認証済のみアクセス可能なグループ

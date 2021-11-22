@@ -2,6 +2,7 @@ package auth
 
 import (
 	domain "go_clean_arch_test/app/domain"
+	repository "go_clean_arch_test/app/domain/repository/auth"
 	"log"
 	"time"
 
@@ -9,14 +10,26 @@ import (
 	"go.uber.org/zap"
 )
 
+type LoginRepository struct {
+	Conn *gorm.DB
+}
+
+// NewLoginRepository constructor
+func NewLoginRepository(conn *gorm.DB) repository.LoginRepository {
+	return &LoginRepository{Conn: conn}
+}
+
 // emailに紐付いたデータ取得
-func GetByEmail(db *gorm.DB, email string, user domain.User) domain.User {
-	db.
+func (loginRepository *LoginRepository) GetByEmail(email string, user domain.User) (domain.User, error) {
+	if err := loginRepository.Conn.
 		Debug().
 		Table("users").
 		Select("users.id, users.email, users.password, users.created_at, users.updated_at").
 		Where("users.email = ?", email).
-		Scan(&user)
+		Scan(&user).
+		Error; err != nil {
+		return user, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -27,5 +40,5 @@ func GetByEmail(db *gorm.DB, email string, user domain.User) domain.User {
 	)
 	log.Println(user)
 
-	return user
+	return user, nil
 }

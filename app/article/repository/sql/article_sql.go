@@ -1,8 +1,10 @@
 package sql
 
 import (
+	"errors"
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
+	"go_clean_arch_test/app/domain/repository"
 	"log"
 	"time"
 
@@ -10,17 +12,32 @@ import (
 	"go.uber.org/zap"
 )
 
+// ArticleRepository struct
+type ArticleRepository struct {
+	Conn *gorm.DB
+}
+
+// NewArticleRepository constructor
+func NewArticleRepository(conn *gorm.DB) repository.ArticleRepository {
+	return &ArticleRepository{Conn: conn}
+}
+
 // 全件取得
-func GetAll(db *gorm.DB, article []domain.Article, userId int) []domain.Article {
+func (articleRepository *ArticleRepository) GetAll(article []domain.Article, userId int) ([]domain.Article, error) {
 	// db.Order("created_at asc").Find(&articles)
 	// db.Debug().Table("article").Find(&article)
-	db.
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Joins("INNER JOIN authors ON articles.author_id = authors.id").
 		Where("authors.user_id = ?", userId).
-		Scan(&article)
+		Scan(&article).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -31,18 +48,23 @@ func GetAll(db *gorm.DB, article []domain.Article, userId int) []domain.Article 
 	)
 	log.Println(article)
 
-	return article
+	return article, nil
 }
 
 // Idに紐付いたデータ取得
-func GetById(db *gorm.DB, article domain.Article, id int) domain.Article {
-	db.
+func (articleRepository *ArticleRepository) GetById(article domain.Article, id int) (domain.Article, error) {
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Joins("INNER JOIN authors ON articles.author_id = authors.id").
 		Where("articles.id = ?", id).
-		Scan(&article)
+		Scan(&article).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return article, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -54,19 +76,24 @@ func GetById(db *gorm.DB, article domain.Article, id int) domain.Article {
 	)
 	log.Println(article)
 
-	return article
+	return article, nil
 
 }
 
 // Id、ユーザーIdに紐付いたデータ取得
-func GetByIdAndUserId(db *gorm.DB, article domain.Article, id int, userId int) domain.Article {
-	db.
+func (articleRepository *ArticleRepository) GetByIdAndUserId(article domain.Article, id int, userId int) (domain.Article, error) {
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Joins("INNER JOIN authors ON articles.author_id = authors.id").
 		Where("articles.id = ? AND authors.user_id = ?", id, userId).
-		Scan(&article)
+		Scan(&article).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return article, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -78,19 +105,24 @@ func GetByIdAndUserId(db *gorm.DB, article domain.Article, id int, userId int) d
 	)
 	log.Println(article)
 
-	return article
+	return article, nil
 
 }
 
 // authorId、ユーザーIdに紐付いたデータ取得
-func GetByAuthorIdAndUserId(db *gorm.DB, articles []domain.Article, id int, userId int) []domain.Article {
-	db.
+func (articleRepository *ArticleRepository) GetByAuthorIdAndUserId(articles []domain.Article, id int, userId int) ([]domain.Article, error) {
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Joins("INNER JOIN authors ON articles.author_id = authors.id").
 		Where("authors.id = ? AND authors.user_id = ?", id, userId).
-		Scan(&articles)
+		Scan(&articles).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -102,13 +134,13 @@ func GetByAuthorIdAndUserId(db *gorm.DB, articles []domain.Article, id int, user
 	)
 	log.Println(articles)
 
-	return articles
+	return articles, nil
 
 }
 
 // titleとcontentを曖昧検索
-func SearchContent(db *gorm.DB, articles []domain.Article, searchContent string, userId int) []domain.Article {
-	db.
+func (articleRepository *ArticleRepository) SearchContent(articles []domain.Article, searchContent string, userId int) ([]domain.Article, error) {
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Select("articles.id , articles.title, articles.content, articles.created_at, articles.updated_at, articles.deleted_at, articles.author_id, authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
@@ -118,7 +150,12 @@ func SearchContent(db *gorm.DB, articles []domain.Article, searchContent string,
 			"%"+searchContent+"%",
 			"%"+searchContent+"%",
 		).
-		Scan(&articles)
+		Scan(&articles).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -130,16 +167,19 @@ func SearchContent(db *gorm.DB, articles []domain.Article, searchContent string,
 	)
 	log.Println(articles)
 
-	return articles
+	return articles, nil
 
 }
 
 // 新規登録
-func Input(db *gorm.DB, articleForm *form.ArticleForm) {
-	db.
+func (articleRepository *ArticleRepository) Input(articleForm *form.ArticleForm) error {
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
-		Create(&articleForm)
+		Create(&articleForm).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -150,12 +190,13 @@ func Input(db *gorm.DB, articleForm *form.ArticleForm) {
 	)
 	log.Println(articleForm)
 
+	return nil
+
 }
 
 // 更新
-func Update(db *gorm.DB, articleForm *form.ArticleForm) {
-	// TODO 更新SQL
-	db.
+func (articleRepository *ArticleRepository) Update(articleForm *form.ArticleForm) error {
+	if err := articleRepository.Conn.
 		Debug().
 		Model(&articleForm).
 		Table("articles").
@@ -165,7 +206,10 @@ func Update(db *gorm.DB, articleForm *form.ArticleForm) {
 			"title":      articleForm.Title,
 			"content":    articleForm.Content,
 			"updated_at": articleForm.UpdatedAt,
-			"author_id":  articleForm.AuthorId})
+			"author_id":  articleForm.AuthorId}).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -176,15 +220,19 @@ func Update(db *gorm.DB, articleForm *form.ArticleForm) {
 	)
 	log.Println(articleForm)
 
+	return nil
 }
 
 // 削除
-func Delete(db *gorm.DB, articleForm *form.ArticleForm) {
-	db.
+func (articleRepository *ArticleRepository) Delete(articleForm *form.ArticleForm) error {
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Where("id = ?", articleForm.Id).
-		Delete(&articleForm)
+		Delete(&articleForm).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -193,17 +241,22 @@ func Delete(db *gorm.DB, articleForm *form.ArticleForm) {
 		zap.String("method", "Delete"),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+
+	return nil
 }
 
 // 削除(authorId指定)
-func DeleteByAuthorId(db *gorm.DB, articleForm *form.ArticleForm) {
+func (articleRepository *ArticleRepository) DeleteByAuthorId(articleForm *form.ArticleForm) error {
 	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■articleForm.AuthorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 	log.Println(articleForm.AuthorId)
-	db.
+	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
 		Where("author_id = ?", articleForm.AuthorId).
-		Delete(&articleForm)
+		Delete(&articleForm).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -212,4 +265,6 @@ func DeleteByAuthorId(db *gorm.DB, articleForm *form.ArticleForm) {
 		zap.String("method", "DeleteByAuthorId"),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+
+	return nil
 }

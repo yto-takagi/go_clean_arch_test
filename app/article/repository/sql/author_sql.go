@@ -1,7 +1,9 @@
 package sql
 
 import (
+	"errors"
 	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/domain/repository"
 	"log"
 	"time"
 
@@ -9,12 +11,29 @@ import (
 	"go.uber.org/zap"
 )
 
+// AuthorRepository struct
+type AuthorRepository struct {
+	Conn *gorm.DB
+}
+
+// NewAuthorRepository constructor
+func NewAuthorRepository(conn *gorm.DB) repository.AuthorRepository {
+	return &AuthorRepository{Conn: conn}
+}
+
 // ユーザーIDに紐づくデータ取得
-func GetAuthorByUser(db *gorm.DB, author []domain.Author, userId int) []domain.Author {
-	db.Debug().Table("authors").
+func (authorRepository *AuthorRepository) GetAuthorByUser(author []domain.Author, userId int) ([]domain.Author, error) {
+	if err := authorRepository.Conn.
+		Debug().
+		Table("authors").
 		Select("authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Where("authors.user_id = ?", userId).
-		Scan(&author)
+		Scan(&author).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -25,18 +44,23 @@ func GetAuthorByUser(db *gorm.DB, author []domain.Author, userId int) []domain.A
 	)
 	log.Println(author)
 
-	return author
+	return author, nil
 
 }
 
 // AuthorId、ユーザーIdに紐付いたデータ取得
-func GetAuthorByAuthorIdAndUserId(db *gorm.DB, author domain.Author, id int, userId int) domain.Author {
-	db.
+func (authorRepository *AuthorRepository) GetAuthorByAuthorIdAndUserId(author domain.Author, id int, userId int) (domain.Author, error) {
+	if err := authorRepository.Conn.
 		Debug().
 		Table("authors").
 		Select("authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Where("authors.id = ? AND authors.user_id = ?", id, userId).
-		Scan(&author)
+		Scan(&author).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return author, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -48,16 +72,23 @@ func GetAuthorByAuthorIdAndUserId(db *gorm.DB, author domain.Author, id int, use
 	)
 	log.Println(author)
 
-	return author
+	return author, nil
 
 }
 
 // カテゴリ名に紐付いたデータ取得
-func GetByAuthorName(db *gorm.DB, author domain.Author, name string, userId int) domain.Author {
-	db.Debug().Table("authors").
+func (authorRepository *AuthorRepository) GetByAuthorName(author domain.Author, name string, userId int) (domain.Author, error) {
+	if err := authorRepository.Conn.
+		Debug().
+		Table("authors").
 		Select("authors.id, authors.name, authors.created_at, authors.updated_at, authors.deleted_at").
 		Where("authors.name = ? AND authors.user_id = ?", name, userId).
-		Scan(&author)
+		Scan(&author).
+		Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return author, err
+		}
+	}
 
 	// log
 	oldTime := time.Now()
@@ -69,13 +100,18 @@ func GetByAuthorName(db *gorm.DB, author domain.Author, name string, userId int)
 	)
 	log.Println(author)
 
-	return author
+	return author, nil
 
 }
 
 // 新規登録
-func InputByAuthor(db *gorm.DB, author *domain.Author) {
-	db.Debug().Create(&author)
+func (authorRepository *AuthorRepository) InputByAuthor(author *domain.Author) error {
+	if err := authorRepository.Conn.
+		Debug().
+		Create(&author).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -86,13 +122,19 @@ func InputByAuthor(db *gorm.DB, author *domain.Author) {
 	)
 	log.Println(author)
 
+	return nil
 }
 
 // 更新
-func UpdateByAuthor(db *gorm.DB, author *domain.Author) {
+func (authorRepository *AuthorRepository) UpdateByAuthor(author *domain.Author) error {
 
-	// TODO 更新SQL
-	db.Debug().Model(&author).Omit("createdAt").Updates(map[string]interface{}{"name": author.Name, "updated_at": author.UpdatedAt})
+	if err := authorRepository.Conn.
+		Debug().
+		Model(&author).Omit("createdAt").
+		Updates(map[string]interface{}{"name": author.Name, "updated_at": author.UpdatedAt}).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -103,15 +145,19 @@ func UpdateByAuthor(db *gorm.DB, author *domain.Author) {
 	)
 	log.Println(author)
 
+	return nil
 }
 
 // 削除
-func DeleteByAuthor(db *gorm.DB, author *domain.Author, userId int) {
-	db.
+func (authorRepository *AuthorRepository) DeleteByAuthor(author *domain.Author, userId int) error {
+	if err := authorRepository.Conn.
 		Debug().
 		Table("authors").
 		Where("id = ? AND user_id = ?", author.Id, userId).
-		Delete(&author)
+		Delete(&author).
+		Error; err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -121,4 +167,5 @@ func DeleteByAuthor(db *gorm.DB, author *domain.Author, userId int) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
+	return nil
 }

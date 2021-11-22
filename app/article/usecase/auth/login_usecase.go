@@ -2,10 +2,9 @@ package auth
 
 import (
 	"encoding/json"
-	sql "go_clean_arch_test/app/article/repository/sql/auth"
-	"go_clean_arch_test/app/article/usecase"
 	"go_clean_arch_test/app/domain"
 	auth "go_clean_arch_test/app/domain/auth"
+	repository "go_clean_arch_test/app/domain/repository/auth"
 	"log"
 	"net/http"
 	"time"
@@ -16,19 +15,31 @@ import (
 	"go.uber.org/zap"
 )
 
-type LoginUsecase struct {
-	DB usecase.DBRepository
+// LoginUsecase interface
+type LoginUsecase interface {
+	GetByEmail(email string) (domain.User, error)
+	GetLoginUser(ctx *gin.Context) (domain.User, error)
+}
+
+type loginUsecase struct {
+	loginUpRepository repository.LoginRepository
+}
+
+// NewSignUpUsecase constructor
+func NewLoginUsecase(loginUpRepository repository.LoginRepository) LoginUsecase {
+	return &loginUsecase{loginUpRepository: loginUpRepository}
 }
 
 // ログイン
-func (usecase *LoginUsecase) GetByEmail(email string) domain.User {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (loginUsecase *loginUsecase) GetByEmail(email string) (domain.User, error) {
 
 	var user domain.User
 	var login auth.Login
 	login.Email = email
-	userInfo := sql.GetByEmail(db, login.Email, user)
+	userInfo, err := loginUsecase.loginUpRepository.GetByEmail(login.Email, user)
+	if err != nil {
+		return userInfo, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -40,10 +51,11 @@ func (usecase *LoginUsecase) GetByEmail(email string) domain.User {
 	)
 	log.Println(userInfo)
 
-	return userInfo
+	return userInfo, err
 }
 
-func (usecase *LoginUsecase) GetLoginUser(ctx *gin.Context) domain.User {
+// ログインユーザー情報取得
+func (loginUsecase *loginUsecase) GetLoginUser(ctx *gin.Context) (domain.User, error) {
 	accessToken := ctx.Request.Header.Get("accessToken")
 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
 	log.Println(ctx.Request.Header)
@@ -74,6 +86,6 @@ func (usecase *LoginUsecase) GetLoginUser(ctx *gin.Context) domain.User {
 			ctx.Next()
 		}
 	}
-	return loginInfo
+	return loginInfo, nil
 
 }

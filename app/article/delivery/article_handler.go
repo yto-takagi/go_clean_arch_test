@@ -1,11 +1,11 @@
 package delivery
 
 import (
-	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/article/usecase"
 	loginUsecase "go_clean_arch_test/app/article/usecase/auth"
 	"go_clean_arch_test/app/domain"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,53 +13,54 @@ import (
 	"go.uber.org/zap"
 )
 
-// var LoginInfo auth.SessionInfo
+const NO_ARTICLES = "no articles"
 
-type ArticleHandler struct {
-	Usecase       usecase.ArticleUsecase
-	AuthorUsecase usecase.AuthorUsecase
-	LoginUsecase  loginUsecase.LoginUsecase
+// ArticleHandler interface
+type ArticleHandler interface {
+	GetAll(ctx *gin.Context)
+	GetById(ctx *gin.Context)
+	GetByAuthorId(ctx *gin.Context)
+	GetLikeByTitleAndContent(ctx *gin.Context)
+	Input(ctx *gin.Context)
+	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
-func NewArticleHandler(db database.DB) *ArticleHandler {
-	return &ArticleHandler{
-		Usecase: usecase.ArticleUsecase{
-			DB: &database.DBRepository{DB: db},
-		},
-		AuthorUsecase: usecase.AuthorUsecase{
-			DB: &database.DBRepository{DB: db},
-		},
-		LoginUsecase: loginUsecase.LoginUsecase{
-			DB: &database.DBRepository{DB: db},
-		},
+type articleHandler struct {
+	articleusecase usecase.ArticleUsecase
+	authorUsecase  usecase.AuthorUsecase
+	loginUsecase   loginUsecase.LoginUsecase
+}
+
+// NewArticleHandler constructor
+func NewArticleHandler(articleusecase usecase.ArticleUsecase, authorUsecase usecase.AuthorUsecase, loginUsecase loginUsecase.LoginUsecase) ArticleHandler {
+	return &articleHandler{articleusecase: articleusecase, authorUsecase: authorUsecase, loginUsecase: loginUsecase}
+}
+
+func (articleHandler *articleHandler) GetAll(ctx *gin.Context) {
+
+	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
 	}
-}
-
-// 全件取得
-// func GetAll(db *gorm.DB, ctx *gin.Context) {
-// 	articles := usecase.GetAll(db)
-// 	ctx.HTML(200, "test.html", gin.H{
-// 		"articles": articles,
-// 	})
-// }
-// 全件取得
-func (handler *ArticleHandler) GetAll(ctx *gin.Context) {
-
-	user := handler.LoginUsecase.GetLoginUser(ctx)
 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○User.ID○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
 	log.Println(user.Id)
 
-	articles := handler.Usecase.GetAll(user.Id)
-	// ctx.JSON(res.StatusCode, NewH("success", articles))
-	if len(articles) < 0 || articles == nil {
-		ctx.JSON(200, NewH("no articles", articles))
+	articles, err := articleHandler.articleusecase.GetAll(user.Id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), articles))
 		return
 	}
-	ctx.JSON(200, NewH("success", articles))
+	if len(articles) < 0 || articles == nil {
+		ctx.JSON(http.StatusOK, NewH(NO_ARTICLES, articles))
+		return
+	}
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), articles))
 }
 
 // 詳細取得(id指定)
-func (handler *ArticleHandler) GetById(ctx *gin.Context) {
+func (articleHandler *articleHandler) GetById(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Query("id"))
 
 	// log
@@ -71,18 +72,23 @@ func (handler *ArticleHandler) GetById(ctx *gin.Context) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
-	article := handler.Usecase.GetById(id)
-	// if article == nil {
-	// 	ctx.JSON(500, NewH("no article", article))
-	// 	return
-	// }
-	ctx.JSON(200, NewH("success", article))
+	article, err := articleHandler.articleusecase.GetById(id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), article))
 }
 
 // 詳細取得(authorId,ユーザーid指定)
-func (handler *ArticleHandler) GetByAuthorId(ctx *gin.Context) {
+func (articleHandler *articleHandler) GetByAuthorId(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Query("id"))
-	user := handler.LoginUsecase.GetLoginUser(ctx)
+	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
+	}
 
 	// log
 	oldTime := time.Now()
@@ -93,16 +99,16 @@ func (handler *ArticleHandler) GetByAuthorId(ctx *gin.Context) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
-	article := handler.Usecase.GetByAuthorIdAndUserId(id, user.Id)
-	// if article == nil {
-	// 	ctx.JSON(500, NewH("no article", article))
-	// 	return
-	// }
-	ctx.JSON(200, NewH("success", article))
+	article, err := articleHandler.articleusecase.GetByAuthorIdAndUserId(id, user.Id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
+		return
+	}
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), article))
 }
 
 // 検索
-func (handler *ArticleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
+func (articleHandler *articleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
@@ -111,22 +117,27 @@ func (handler *ArticleHandler) GetLikeByTitleAndContent(ctx *gin.Context) {
 		zap.String("param searchContent", ctx.Query("content")),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	user := handler.LoginUsecase.GetLoginUser(ctx)
-
-	articles := handler.Usecase.GetLikeByTitleAndContent(ctx.Query("content"), user.Id)
-	// if article == nil {
-	// 	ctx.JSON(500, NewH("no article", article))
-	// 	return
-	// }
-	if len(articles) == 0 || articles == nil || articles[0].Id == 0 {
-		ctx.JSON(200, NewH("no articles", articles))
+	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
 		return
 	}
-	ctx.JSON(200, NewH("success", articles))
+
+	articles, err := articleHandler.articleusecase.GetLikeByTitleAndContent(ctx.Query("content"), user.Id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), articles))
+		return
+	}
+
+	if len(articles) == 0 || articles == nil || articles[0].Id == 0 {
+		ctx.JSON(http.StatusOK, NewH(NO_ARTICLES, articles))
+		return
+	}
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), articles))
 }
 
 // 新規登録
-func (handler *ArticleHandler) Input(ctx *gin.Context) {
+func (articleHandler *articleHandler) Input(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
@@ -138,15 +149,23 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 	article := domain.Article{}
 	err := ctx.Bind(&article)
 	if err != nil {
-		ctx.JSON(302, NewH("Bad Request", article))
+		ctx.JSON(http.StatusFound, NewH(http.StatusText(http.StatusFound), article))
 		return
 	}
 
-	user := handler.LoginUsecase.GetLoginUser(ctx)
+	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
+	}
 	article.Author.UserId = user.Id
 
 	// カテゴリー検索(カテゴリー名で)
-	authorByName := handler.AuthorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+	authorByName, err := articleHandler.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
+	}
 	// TODO 空チェックできてる？
 	if authorByName.Id == 0 {
 		// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
@@ -155,7 +174,11 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 			zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
 			zap.Duration("elapsed", time.Now().Sub(oldTime)),
 		)
-		authorByName = handler.AuthorUsecase.Input(&article.Author)
+		authorByName, err = articleHandler.authorUsecase.Input(&article.Author)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+			return
+		}
 	} else {
 		// カテゴリー存在したらそのIdで記事更新
 		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
@@ -170,16 +193,17 @@ func (handler *ArticleHandler) Input(ctx *gin.Context) {
 	log.Println(authorByName.Id)
 
 	article.Author.Id = authorByName.Id
-	handler.Usecase.Input(&article)
-	// if article == nil {
-	// 	ctx.JSON(500, NewH("no article", article))
-	// 	return
-	// }
-	ctx.JSON(200, NewH("success", article))
+	err = articleHandler.articleusecase.Input(&article)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), article))
 }
 
 // 更新
-func (handler *ArticleHandler) Update(ctx *gin.Context) {
+func (articleHandler *articleHandler) Update(ctx *gin.Context) {
 
 	// log
 	oldTime := time.Now()
@@ -192,16 +216,24 @@ func (handler *ArticleHandler) Update(ctx *gin.Context) {
 	article := domain.Article{}
 	err := ctx.Bind(&article)
 	if err != nil {
-		ctx.JSON(302, NewH("Bad Request", article))
+		ctx.JSON(http.StatusFound, NewH(http.StatusText(http.StatusFound), article))
 		return
 	}
 
-	user := handler.LoginUsecase.GetLoginUser(ctx)
+	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
+	}
 	article.Author.UserId = user.Id
 
 	// TODO カテゴリーが変わってる場合
 	// カテゴリー検索(カテゴリー名で)
-	authorByName := handler.AuthorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+	authorByName, err := articleHandler.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
+	}
 	// TODO 空チェックできてる？
 	if authorByName.Id == 0 {
 		// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
@@ -210,7 +242,7 @@ func (handler *ArticleHandler) Update(ctx *gin.Context) {
 			zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
 			zap.Duration("elapsed", time.Now().Sub(oldTime)),
 		)
-		handler.AuthorUsecase.Input(&article.Author)
+		articleHandler.authorUsecase.Input(&article.Author)
 	} else {
 		// カテゴリー存在したらそのIdで記事更新
 		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
@@ -218,35 +250,44 @@ func (handler *ArticleHandler) Update(ctx *gin.Context) {
 			zap.String("■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在する場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Update"),
 			zap.Duration("elapsed", time.Now().Sub(oldTime)),
 		)
-		handler.AuthorUsecase.Update(&article.Author)
+		articleHandler.authorUsecase.Update(&article.Author)
 	}
 
 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
 	log.Println(&article)
 
 	// TODO Author.ID更新されているか？
-	handler.Usecase.Update(&article)
-	// if article == nil {
-	// 	ctx.JSON(500, NewH("no article", article))
-	// 	return
-	// }
-	ctx.JSON(200, NewH("success", article))
+	err = articleHandler.articleusecase.Update(&article)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), article))
 }
 
 // 削除(id指定)
-func (handler *ArticleHandler) Delete(ctx *gin.Context) {
+func (articleHandler *articleHandler) Delete(ctx *gin.Context) {
 	article := domain.Article{}
 	err := ctx.Bind(&article)
 	if err != nil {
-		ctx.JSON(302, NewH("Bad Request", article))
+		ctx.JSON(http.StatusFound, NewH(http.StatusText(http.StatusFound), article))
 		return
 	}
 
 	// ログインユーザーID且つ、記事ID データが存在しなければ、302で返す
-	user := handler.LoginUsecase.GetLoginUser(ctx)
-	articleByIdAndUserId := handler.Usecase.GetByIdAndUserId(article.Id, user.Id)
+	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		return
+	}
+	articleByIdAndUserId, err := articleHandler.articleusecase.GetByIdAndUserId(article.Id, user.Id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
+		return
+	}
 	if articleByIdAndUserId.Id == 0 {
-		ctx.JSON(302, NewH("Bad Request", article))
+		ctx.JSON(http.StatusFound, NewH(http.StatusText(http.StatusFound), article))
 		return
 	}
 
@@ -259,45 +300,11 @@ func (handler *ArticleHandler) Delete(ctx *gin.Context) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
-	handler.Usecase.Delete(article.Id)
-	// if article == nil {
-	// 	ctx.JSON(500, NewH("no article", article))
-	// 	return
-	// }
-	ctx.JSON(200, NewH("success", article.Id))
+	err = articleHandler.articleusecase.Delete(article.Id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, NewH(http.StatusText(http.StatusOK), article.Id))
 }
-
-// func getLoginUser(ctx *gin.Context) domain.User {
-// 	accessToken := ctx.Request.Header.Get("accessToken")
-// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-// 	log.Println(ctx.Request.Header)
-// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○accessToken○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-// 	log.Println(accessToken)
-
-// 	testCookie, _ := ctx.Cookie("testCookie")
-// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○testCookie○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-// 	log.Println(testCookie)
-
-// 	session := sessions.Default(ctx)
-// 	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-// 	log.Println(session.Get(accessToken))
-// 	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
-// 	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
-
-// 	var loginInfo domain.User
-// 	if err != nil {
-// 		ctx.Status(http.StatusUnauthorized)
-// 		ctx.Abort()
-// 	} else {
-// 		// Json文字列のアンマーシャル
-// 		err := json.Unmarshal([]byte(loginUserJson), &loginInfo)
-// 		if err != nil {
-// 			ctx.Status(http.StatusUnauthorized)
-// 			ctx.Abort()
-// 		} else {
-// 			ctx.Next()
-// 		}
-// 	}
-// 	return loginInfo
-
-// }

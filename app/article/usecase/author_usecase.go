@@ -1,25 +1,40 @@
 package usecase
 
 import (
-	"go_clean_arch_test/app/article/repository/sql"
 	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/domain/repository"
 	"log"
 	"time"
 
 	"go.uber.org/zap"
 )
 
-type AuthorUsecase struct {
-	DB DBRepository
+// AuthorUsecase interface
+type AuthorUsecase interface {
+	GetByUser(userId int) ([]domain.Author, error)
+	GetByAuthorIdAndUserId(id int, userId int) (domain.Author, error)
+	GetByName(name string, userId int) (domain.Author, error)
+	Input(author *domain.Author) (domain.Author, error)
+	Update(author *domain.Author) error
+	Delete(author *domain.Author, userId int) error
+}
+type authorUsecase struct {
+	authorRepository repository.AuthorRepository
+}
+
+// NewAuthorUsecase constructor
+func NewAuthorUsecase(authorRepository repository.AuthorRepository) AuthorUsecase {
+	return &authorUsecase{authorRepository: authorRepository}
 }
 
 // ユーザーIDに紐づくカテゴリー全件取得
-func (usecase *AuthorUsecase) GetByUser(userId int) []domain.Author {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (authorUsecase *authorUsecase) GetByUser(userId int) ([]domain.Author, error) {
 
 	var author []domain.Author
-	authorByUser := sql.GetAuthorByUser(db, author, userId)
+	authorByUser, err := authorUsecase.authorRepository.GetAuthorByUser(author, userId)
+	if err != nil {
+		return nil, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -30,16 +45,17 @@ func (usecase *AuthorUsecase) GetByUser(userId int) []domain.Author {
 	)
 	log.Println(authorByUser)
 
-	return authorByUser
+	return authorByUser, nil
 }
 
 // Id、ユーザーID指定
-func (usecase *AuthorUsecase) GetByAuthorIdAndUserId(id int, userId int) domain.Author {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (authorUsecase *authorUsecase) GetByAuthorIdAndUserId(id int, userId int) (domain.Author, error) {
 
 	var author domain.Author
-	authorByIdAndUserId := sql.GetAuthorByAuthorIdAndUserId(db, author, id, userId)
+	authorByIdAndUserId, err := authorUsecase.authorRepository.GetAuthorByAuthorIdAndUserId(author, id, userId)
+	if err != nil {
+		return author, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -51,16 +67,17 @@ func (usecase *AuthorUsecase) GetByAuthorIdAndUserId(id int, userId int) domain.
 	)
 	log.Println(authorByIdAndUserId)
 
-	return authorByIdAndUserId
+	return authorByIdAndUserId, nil
 }
 
 // カテゴリー名検索
-func (usecase *AuthorUsecase) GetByName(name string, userId int) domain.Author {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (authorUsecase *authorUsecase) GetByName(name string, userId int) (domain.Author, error) {
 
 	var author domain.Author
-	authorByName := sql.GetByAuthorName(db, author, name, userId)
+	authorByName, err := authorUsecase.authorRepository.GetByAuthorName(author, name, userId)
+	if err != nil {
+		return author, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -72,19 +89,20 @@ func (usecase *AuthorUsecase) GetByName(name string, userId int) domain.Author {
 	)
 	log.Println(authorByName)
 
-	return authorByName
+	return authorByName, nil
 }
 
 // 新規登録
-func (usecase *AuthorUsecase) Input(author *domain.Author) domain.Author {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (authorUsecase *authorUsecase) Input(author *domain.Author) (domain.Author, error) {
 
 	author.Id = 0
 	author.CreatedAt = time.Now()
 	author.UpdatedAt = time.Now()
 
-	sql.InputByAuthor(db, author)
+	err := authorUsecase.authorRepository.InputByAuthor(author)
+	if err != nil {
+		return *author, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -94,17 +112,17 @@ func (usecase *AuthorUsecase) Input(author *domain.Author) domain.Author {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 	log.Println(author)
-	return *author
+	return *author, nil
 }
 
 // 更新
-func (usecase *AuthorUsecase) Update(author *domain.Author) {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (authorUsecase *authorUsecase) Update(author *domain.Author) error {
 
 	author.UpdatedAt = time.Now()
-
-	sql.UpdateByAuthor(db, author)
+	err := authorUsecase.authorRepository.UpdateByAuthor(author)
+	if err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -114,14 +132,17 @@ func (usecase *AuthorUsecase) Update(author *domain.Author) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 	log.Println(author)
+
+	return nil
 }
 
 // 削除
-func (usecase *AuthorUsecase) Delete(author *domain.Author, userId int) {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (authorUsecase *authorUsecase) Delete(author *domain.Author, userId int) error {
 
-	sql.DeleteByAuthor(db, author, userId)
+	err := authorUsecase.authorRepository.DeleteByAuthor(author, userId)
+	if err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -130,4 +151,6 @@ func (usecase *AuthorUsecase) Delete(author *domain.Author, userId int) {
 		zap.String("method", "Delete"),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+
+	return nil
 }

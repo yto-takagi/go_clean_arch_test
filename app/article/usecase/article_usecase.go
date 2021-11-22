@@ -1,26 +1,46 @@
 package usecase
 
 import (
-	"go_clean_arch_test/app/article/repository/sql"
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
+	"go_clean_arch_test/app/domain/repository"
 	"log"
 	"time"
 
 	"go.uber.org/zap"
 )
 
-type ArticleUsecase struct {
-	DB DBRepository
+// ArticleUsecase interface
+type ArticleUsecase interface {
+	GetAll(userId int) ([]domain.Article, error)
+	GetById(id int) (domain.Article, error)
+	GetByIdAndUserId(id int, userId int) (domain.Article, error)
+	GetByAuthorIdAndUserId(id int, userId int) ([]domain.Article, error)
+	GetLikeByTitleAndContent(searchContent string, userId int) ([]domain.Article, error)
+	Input(article *domain.Article) error
+	Update(article *domain.Article) error
+	Delete(id int) error
+	DeleteByAuthor(authorId int) error
+}
+type articleUsecase struct {
+	articleRepository repository.ArticleRepository
+}
+
+// NewArticleUsecase constructor
+func NewArticleUsecase(articleRepository repository.ArticleRepository) ArticleUsecase {
+	return &articleUsecase{articleRepository: articleRepository}
 }
 
 // 全件取得
-func (usecase *ArticleUsecase) GetAll(userId int) []domain.Article {
-	db := usecase.DB.Connect()
+func (articleUsecase *articleUsecase) GetAll(userId int) ([]domain.Article, error) {
+	// db := usecase.DB.Connect()
 	// defer db.Close()
 
 	var article []domain.Article
-	articles := sql.GetAll(db, article, userId)
+	articles, err := articleUsecase.articleRepository.GetAll(article, userId)
+	if err != nil {
+		return nil, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -31,16 +51,17 @@ func (usecase *ArticleUsecase) GetAll(userId int) []domain.Article {
 	)
 	log.Println(articles)
 
-	return articles
+	return articles, nil
 }
 
 // Id指定
-func (usecase *ArticleUsecase) GetById(id int) domain.Article {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) GetById(id int) (domain.Article, error) {
 
 	var article domain.Article
-	articleByid := sql.GetById(db, article, id)
+	articleById, err := articleUsecase.articleRepository.GetById(article, id)
+	if err != nil {
+		return article, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -50,18 +71,19 @@ func (usecase *ArticleUsecase) GetById(id int) domain.Article {
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articleByid)
+	log.Println(articleById)
 
-	return articleByid
+	return articleById, nil
 }
 
 // Id、ユーザーID指定
-func (usecase *ArticleUsecase) GetByIdAndUserId(id int, userId int) domain.Article {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) GetByIdAndUserId(id int, userId int) (domain.Article, error) {
 
 	var article domain.Article
-	articleByIdAndUserId := sql.GetByIdAndUserId(db, article, id, userId)
+	articleByIdAndUserId, err := articleUsecase.articleRepository.GetByIdAndUserId(article, id, userId)
+	if err != nil {
+		return article, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -73,16 +95,17 @@ func (usecase *ArticleUsecase) GetByIdAndUserId(id int, userId int) domain.Artic
 	)
 	log.Println(articleByIdAndUserId)
 
-	return articleByIdAndUserId
+	return articleByIdAndUserId, nil
 }
 
 // authorId、ユーザーID指定
-func (usecase *ArticleUsecase) GetByAuthorIdAndUserId(id int, userId int) []domain.Article {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) GetByAuthorIdAndUserId(id int, userId int) ([]domain.Article, error) {
 
 	var articles []domain.Article
-	articleByIdAndUserId := sql.GetByAuthorIdAndUserId(db, articles, id, userId)
+	articleByIdAndUserId, err := articleUsecase.articleRepository.GetByAuthorIdAndUserId(articles, id, userId)
+	if err != nil {
+		return nil, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -94,16 +117,17 @@ func (usecase *ArticleUsecase) GetByAuthorIdAndUserId(id int, userId int) []doma
 	)
 	log.Println(articleByIdAndUserId)
 
-	return articleByIdAndUserId
+	return articleByIdAndUserId, nil
 }
 
 // 検索
-func (usecase *ArticleUsecase) GetLikeByTitleAndContent(searchContent string, userId int) []domain.Article {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) GetLikeByTitleAndContent(searchContent string, userId int) ([]domain.Article, error) {
 
 	var article []domain.Article
-	articles := sql.SearchContent(db, article, searchContent, userId)
+	articles, err := articleUsecase.articleRepository.SearchContent(article, searchContent, userId)
+	if err != nil {
+		return nil, err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -115,13 +139,11 @@ func (usecase *ArticleUsecase) GetLikeByTitleAndContent(searchContent string, us
 	)
 	log.Println(articles)
 
-	return articles
+	return articles, nil
 }
 
 // 新規登録
-func (usecase *ArticleUsecase) Input(article *domain.Article) {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) Input(article *domain.Article) error {
 
 	ArticleForm := form.ArticleForm{}
 	ArticleForm.Title = article.Title
@@ -130,7 +152,10 @@ func (usecase *ArticleUsecase) Input(article *domain.Article) {
 	ArticleForm.UpdatedAt = time.Now()
 	ArticleForm.AuthorId = article.Author.Id
 
-	sql.Input(db, &ArticleForm)
+	err := articleUsecase.articleRepository.Input(&ArticleForm)
+	if err != nil {
+		return err
+	}
 
 	article.Id = ArticleForm.Id
 	article.CreatedAt = ArticleForm.CreatedAt
@@ -144,12 +169,12 @@ func (usecase *ArticleUsecase) Input(article *domain.Article) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 	log.Println(article)
+
+	return nil
 }
 
 // 更新
-func (usecase *ArticleUsecase) Update(article *domain.Article) {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) Update(article *domain.Article) error {
 
 	ArticleForm := form.ArticleForm{}
 	ArticleForm.Id = article.Id
@@ -158,8 +183,10 @@ func (usecase *ArticleUsecase) Update(article *domain.Article) {
 	ArticleForm.UpdatedAt = time.Now()
 	ArticleForm.AuthorId = article.Author.Id
 
-	// TODO 更新SQL
-	sql.Update(db, &ArticleForm)
+	err := articleUsecase.articleRepository.Update(&ArticleForm)
+	if err != nil {
+		return err
+	}
 
 	article.Id = ArticleForm.Id
 	article.CreatedAt = ArticleForm.CreatedAt
@@ -173,16 +200,19 @@ func (usecase *ArticleUsecase) Update(article *domain.Article) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 	log.Println(article)
+
+	return nil
 }
 
 // 削除
-func (usecase *ArticleUsecase) Delete(id int) {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) Delete(id int) error {
 
 	ArticleForm := form.ArticleForm{}
 	ArticleForm.Id = id
-	sql.Delete(db, &ArticleForm)
+	err := articleUsecase.articleRepository.Delete(&ArticleForm)
+	if err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -192,18 +222,21 @@ func (usecase *ArticleUsecase) Delete(id int) {
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+
+	return nil
 }
 
 // 削除(authorId指定)
-func (usecase *ArticleUsecase) DeleteByAuthor(authorId int) {
-	db := usecase.DB.Connect()
-	// defer db.Close()
+func (articleUsecase *articleUsecase) DeleteByAuthor(authorId int) error {
 
 	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 	log.Println(authorId)
 	ArticleForm := form.ArticleForm{}
 	ArticleForm.AuthorId = authorId
-	sql.DeleteByAuthorId(db, &ArticleForm)
+	err := articleUsecase.articleRepository.DeleteByAuthorId(&ArticleForm)
+	if err != nil {
+		return err
+	}
 
 	// log
 	oldTime := time.Now()
@@ -213,4 +246,6 @@ func (usecase *ArticleUsecase) DeleteByAuthor(authorId int) {
 		zap.Int("param authorId", authorId),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+
+	return nil
 }

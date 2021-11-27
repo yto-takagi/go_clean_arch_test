@@ -1,7 +1,9 @@
 package sql
 
 import (
+	"context"
 	"errors"
+	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
 	"go_clean_arch_test/app/domain/repository"
@@ -172,8 +174,12 @@ func (articleRepository *ArticleRepository) SearchContent(articles []domain.Arti
 }
 
 // 新規登録
-func (articleRepository *ArticleRepository) Input(articleForm *form.ArticleForm) error {
-	if err := articleRepository.Conn.
+func (articleRepository *ArticleRepository) Input(ctx context.Context, articleForm *form.ArticleForm) error {
+	dao, ok := database.GetTx(ctx)
+	if !ok {
+		dao = articleRepository.Conn
+	}
+	if err := dao.
 		Debug().
 		Table("articles").
 		Create(&articleForm).
@@ -195,8 +201,12 @@ func (articleRepository *ArticleRepository) Input(articleForm *form.ArticleForm)
 }
 
 // 更新
-func (articleRepository *ArticleRepository) Update(articleForm *form.ArticleForm) error {
-	if err := articleRepository.Conn.
+func (articleRepository *ArticleRepository) Update(ctx context.Context, articleForm *form.ArticleForm) error {
+	dao, ok := database.GetTx(ctx)
+	if !ok {
+		dao = articleRepository.Conn
+	}
+	if err := dao.
 		Debug().
 		Model(&articleForm).
 		Table("articles").
@@ -246,10 +256,14 @@ func (articleRepository *ArticleRepository) Delete(articleForm *form.ArticleForm
 }
 
 // 削除(authorId指定)
-func (articleRepository *ArticleRepository) DeleteByAuthorId(articleForm *form.ArticleForm) error {
+func (articleRepository *ArticleRepository) DeleteByAuthorId(ctx context.Context, articleForm *form.ArticleForm) error {
 	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■articleForm.AuthorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 	log.Println(articleForm.AuthorId)
-	if err := articleRepository.Conn.
+	dao, ok := database.GetTx(ctx)
+	if !ok {
+		dao = articleRepository.Conn
+	}
+	if err := dao.
 		Debug().
 		Table("articles").
 		Where("author_id = ?", articleForm.AuthorId).

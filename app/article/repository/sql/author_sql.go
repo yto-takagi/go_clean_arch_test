@@ -1,7 +1,9 @@
 package sql
 
 import (
+	"context"
 	"errors"
+	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/domain"
 	"go_clean_arch_test/app/domain/repository"
 	"log"
@@ -105,8 +107,12 @@ func (authorRepository *AuthorRepository) GetByAuthorName(author domain.Author, 
 }
 
 // 新規登録
-func (authorRepository *AuthorRepository) InputByAuthor(author *domain.Author) error {
-	if err := authorRepository.Conn.
+func (authorRepository *AuthorRepository) InputByAuthor(ctx context.Context, author *domain.Author) error {
+	dao, ok := database.GetTx(ctx)
+	if !ok {
+		dao = authorRepository.Conn
+	}
+	if err := dao.
 		Debug().
 		Create(&author).
 		Error; err != nil {
@@ -126,9 +132,12 @@ func (authorRepository *AuthorRepository) InputByAuthor(author *domain.Author) e
 }
 
 // 更新
-func (authorRepository *AuthorRepository) UpdateByAuthor(author *domain.Author) error {
-
-	if err := authorRepository.Conn.
+func (authorRepository *AuthorRepository) UpdateByAuthor(ctx context.Context, author *domain.Author) error {
+	dao, ok := database.GetTx(ctx)
+	if !ok {
+		dao = authorRepository.Conn
+	}
+	if err := dao.
 		Debug().
 		Model(&author).Omit("createdAt").
 		Updates(map[string]interface{}{"name": author.Name, "updated_at": author.UpdatedAt}).
@@ -149,8 +158,12 @@ func (authorRepository *AuthorRepository) UpdateByAuthor(author *domain.Author) 
 }
 
 // 削除
-func (authorRepository *AuthorRepository) DeleteByAuthor(author *domain.Author, userId int) error {
-	if err := authorRepository.Conn.
+func (authorRepository *AuthorRepository) DeleteByAuthor(ctx context.Context, author *domain.Author, userId int) error {
+	dao, ok := database.GetTx(ctx)
+	if !ok {
+		dao = authorRepository.Conn
+	}
+	if err := dao.
 		Debug().
 		Table("authors").
 		Where("id = ? AND user_id = ?", author.Id, userId).

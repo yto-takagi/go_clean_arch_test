@@ -160,40 +160,7 @@ func (articleHandler *articleHandler) Input(ctx *gin.Context) {
 	}
 	article.Author.UserId = user.Id
 
-	// カテゴリー検索(カテゴリー名で)
-	authorByName, err := articleHandler.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-		return
-	}
-	// TODO 空チェックできてる？
-	if authorByName.Id == 0 {
-		// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
-		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-			zap.String("method", "Update"),
-			zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
-			zap.Duration("elapsed", time.Now().Sub(oldTime)),
-		)
-		authorByName, err = articleHandler.authorUsecase.Input(&article.Author)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-			return
-		}
-	} else {
-		// カテゴリー存在したらそのIdで記事更新
-		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-			zap.String("method", "Update"),
-			zap.String("■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在する場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Update"),
-			zap.Duration("elapsed", time.Now().Sub(oldTime)),
-		)
-		// handler.AuthorUsecase.Update(&article.Author)
-	}
-
-	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorByName.Id■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
-	log.Println(authorByName.Id)
-
-	article.Author.Id = authorByName.Id
-	err = articleHandler.articleusecase.Input(&article)
+	err = articleHandler.articleusecase.Input(ctx, &article)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
 		return
@@ -227,37 +194,37 @@ func (articleHandler *articleHandler) Update(ctx *gin.Context) {
 	}
 	article.Author.UserId = user.Id
 
-	// TODO カテゴリーが変わってる場合
-	// カテゴリー検索(カテゴリー名で)
-	authorByName, err := articleHandler.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-		return
-	}
-	// TODO 空チェックできてる？
-	if authorByName.Id == 0 {
-		// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
-		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-			zap.String("method", "Update"),
-			zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
-			zap.Duration("elapsed", time.Now().Sub(oldTime)),
-		)
-		articleHandler.authorUsecase.Input(&article.Author)
-	} else {
-		// カテゴリー存在したらそのIdで記事更新
-		logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-			zap.String("method", "Update"),
-			zap.String("■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在する場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Update"),
-			zap.Duration("elapsed", time.Now().Sub(oldTime)),
-		)
-		articleHandler.authorUsecase.Update(&article.Author)
-	}
+	// // TODO カテゴリーが変わってる場合
+	// // カテゴリー検索(カテゴリー名で)
+	// authorByName, err := articleHandler.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+	// if err != nil {
+	// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+	// 	return
+	// }
+	// // TODO 空チェックできてる？
+	// if authorByName.Id == 0 {
+	// 	// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
+	// 	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
+	// 		zap.String("method", "Update"),
+	// 		zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
+	// 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	// 	)
+	// 	articleHandler.authorUsecase.Input(&article.Author)
+	// } else {
+	// 	// カテゴリー存在したらそのIdで記事更新
+	// 	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
+	// 		zap.String("method", "Update"),
+	// 		zap.String("■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在する場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Update"),
+	// 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
+	// 	)
+	// 	articleHandler.authorUsecase.Update(&article.Author)
+	// }
 
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(&article)
+	// log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+	// log.Println(&article)
 
 	// TODO Author.ID更新されているか？
-	err = articleHandler.articleusecase.Update(&article)
+	err = articleHandler.articleusecase.Update(ctx, &article)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
 		return

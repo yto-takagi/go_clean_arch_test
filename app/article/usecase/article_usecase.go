@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"context"
+	"go_clean_arch_test/app/article/transaction"
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
 	"go_clean_arch_test/app/domain/repository"
@@ -17,18 +19,20 @@ type ArticleUsecase interface {
 	GetByIdAndUserId(id int, userId int) (domain.Article, error)
 	GetByAuthorIdAndUserId(id int, userId int) ([]domain.Article, error)
 	GetLikeByTitleAndContent(searchContent string, userId int) ([]domain.Article, error)
-	Input(article *domain.Article) error
-	Update(article *domain.Article) error
+	Input(ctx context.Context, article *domain.Article) error
+	Update(ctx context.Context, article *domain.Article) error
 	Delete(id int) error
-	DeleteByAuthor(authorId int) error
+	DeleteByAuthor(ctx context.Context, author *domain.Author, userId int) error
 }
 type articleUsecase struct {
+	authorUsecase     AuthorUsecase
 	articleRepository repository.ArticleRepository
+	trancaction       transaction.Transaction
 }
 
 // NewArticleUsecase constructor
-func NewArticleUsecase(articleRepository repository.ArticleRepository) ArticleUsecase {
-	return &articleUsecase{articleRepository: articleRepository}
+func NewArticleUsecase(authorUsecase AuthorUsecase, articleRepository repository.ArticleRepository, trancaction transaction.Transaction) ArticleUsecase {
+	return &articleUsecase{authorUsecase: authorUsecase, articleRepository: articleRepository, trancaction: trancaction}
 }
 
 // 全件取得
@@ -143,65 +147,123 @@ func (articleUsecase *articleUsecase) GetLikeByTitleAndContent(searchContent str
 }
 
 // 新規登録
-func (articleUsecase *articleUsecase) Input(article *domain.Article) error {
+// トランザクション
+func (articleUsecase *articleUsecase) Input(ctx context.Context, article *domain.Article) error {
 
-	ArticleForm := form.ArticleForm{}
-	ArticleForm.Title = article.Title
-	ArticleForm.Content = article.Content
-	ArticleForm.CreatedAt = time.Now()
-	ArticleForm.UpdatedAt = time.Now()
-	ArticleForm.AuthorId = article.Author.Id
+	_, err := articleUsecase.trancaction.DoInTx(ctx, func(ctx context.Context) (interface{}, error) {
 
-	err := articleUsecase.articleRepository.Input(&ArticleForm)
-	if err != nil {
-		return err
-	}
+		// カテゴリー検索(カテゴリー名で)
+		authorByName, err := articleUsecase.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+		if err != nil {
+			return article, err
+		}
+		// if err != nil {
+		// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+		// 	return
+		// }
+		// TODO 空チェックできてる？
+		if authorByName.Id == 0 {
+			// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
+			log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+			authorByName, err = articleUsecase.authorUsecase.Input(ctx, &article.Author)
+			if err != nil {
+				return article, err
+			}
+			// if err != nil {
+			// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+			// 	return
+			// }
+		}
 
-	article.Id = ArticleForm.Id
-	article.CreatedAt = ArticleForm.CreatedAt
-	article.UpdatedAt = ArticleForm.UpdatedAt
+		log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorByName.Id■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+		log.Println(authorByName.Id)
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "Input"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(article)
+		article.Author.Id = authorByName.Id
 
-	return nil
+		ArticleForm := form.ArticleForm{}
+		ArticleForm.Title = article.Title
+		ArticleForm.Content = article.Content
+		ArticleForm.CreatedAt = time.Now()
+		ArticleForm.UpdatedAt = time.Now()
+		ArticleForm.AuthorId = article.Author.Id
+
+		err = articleUsecase.articleRepository.Input(ctx, &ArticleForm)
+		if err != nil {
+			return article, err
+		}
+
+		article.Id = ArticleForm.Id
+		article.CreatedAt = ArticleForm.CreatedAt
+		article.UpdatedAt = ArticleForm.UpdatedAt
+
+		// log
+		oldTime := time.Now()
+		logger, _ := zap.NewProduction()
+		logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+			zap.String("method", "Input"),
+			zap.Duration("elapsed", time.Now().Sub(oldTime)),
+		)
+		log.Println(article)
+		return article, nil
+	})
+
+	return err
 }
 
 // 更新
-func (articleUsecase *articleUsecase) Update(article *domain.Article) error {
+// トランザクション
+func (articleUsecase *articleUsecase) Update(ctx context.Context, article *domain.Article) error {
 
-	ArticleForm := form.ArticleForm{}
-	ArticleForm.Id = article.Id
-	ArticleForm.Title = article.Title
-	ArticleForm.Content = article.Content
-	ArticleForm.UpdatedAt = time.Now()
-	ArticleForm.AuthorId = article.Author.Id
+	_, err := articleUsecase.trancaction.DoInTx(ctx, func(ctx context.Context) (interface{}, error) {
+		// TODO カテゴリーが変わってる場合
+		// カテゴリー検索(カテゴリー名で)
+		authorByName, err := articleUsecase.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
+		if err != nil {
+			return article, err
+		}
+		// TODO 空チェックできてる？
+		if authorByName.Id == 0 {
+			// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
+			log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+			articleUsecase.authorUsecase.Input(ctx, &article.Author)
+		} else {
+			// カテゴリー存在したらそのIdで記事更新
+			log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+			articleUsecase.authorUsecase.Update(ctx, &article.Author)
+		}
 
-	err := articleUsecase.articleRepository.Update(&ArticleForm)
-	if err != nil {
-		return err
-	}
+		log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
+		log.Println(&article)
 
-	article.Id = ArticleForm.Id
-	article.CreatedAt = ArticleForm.CreatedAt
-	article.UpdatedAt = ArticleForm.UpdatedAt
+		ArticleForm := form.ArticleForm{}
+		ArticleForm.Id = article.Id
+		ArticleForm.Title = article.Title
+		ArticleForm.Content = article.Content
+		ArticleForm.UpdatedAt = time.Now()
+		ArticleForm.AuthorId = article.Author.Id
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "Update"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(article)
+		err = articleUsecase.articleRepository.Update(ctx, &ArticleForm)
+		if err != nil {
+			return article, err
+		}
 
-	return nil
+		article.Id = ArticleForm.Id
+		article.CreatedAt = ArticleForm.CreatedAt
+		article.UpdatedAt = ArticleForm.UpdatedAt
+
+		// log
+		oldTime := time.Now()
+		logger, _ := zap.NewProduction()
+		logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
+			zap.String("method", "Update"),
+			zap.Duration("elapsed", time.Now().Sub(oldTime)),
+		)
+		log.Println(article)
+
+		return article, nil
+	})
+
+	return err
 }
 
 // 削除
@@ -227,25 +289,23 @@ func (articleUsecase *articleUsecase) Delete(id int) error {
 }
 
 // 削除(authorId指定)
-func (articleUsecase *articleUsecase) DeleteByAuthor(authorId int) error {
+func (articleUsecase *articleUsecase) DeleteByAuthor(ctx context.Context, author *domain.Author, userId int) error {
 
-	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
-	log.Println(authorId)
-	ArticleForm := form.ArticleForm{}
-	ArticleForm.AuthorId = authorId
-	err := articleUsecase.articleRepository.DeleteByAuthorId(&ArticleForm)
-	if err != nil {
-		return err
-	}
+	_, err := articleUsecase.trancaction.DoInTx(ctx, func(ctx context.Context) (interface{}, error) {
+		err := articleUsecase.authorUsecase.Delete(ctx, author, userId)
+		if err != nil {
+			return author, err
+		}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "DeleteByAuthor"),
-		zap.Int("param authorId", authorId),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
+		ArticleForm := form.ArticleForm{}
+		ArticleForm.AuthorId = author.Id
+		err = articleUsecase.articleRepository.DeleteByAuthorId(ctx, &ArticleForm)
+		if err != nil {
+			return author, err
+		}
 
-	return nil
+		return author, nil
+	})
+
+	return err
 }

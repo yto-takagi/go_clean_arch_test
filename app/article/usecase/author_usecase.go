@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"go_clean_arch_test/app/domain"
 	"go_clean_arch_test/app/domain/repository"
 	"log"
@@ -14,9 +15,9 @@ type AuthorUsecase interface {
 	GetByUser(userId int) ([]domain.Author, error)
 	GetByAuthorIdAndUserId(id int, userId int) (domain.Author, error)
 	GetByName(name string, userId int) (domain.Author, error)
-	Input(author *domain.Author) (domain.Author, error)
-	Update(author *domain.Author) error
-	Delete(author *domain.Author, userId int) error
+	Input(ctx context.Context, author *domain.Author) (domain.Author, error)
+	Update(ctx context.Context, author *domain.Author) error
+	Delete(ctx context.Context, author *domain.Author, userId int) error
 }
 type authorUsecase struct {
 	authorRepository repository.AuthorRepository
@@ -93,13 +94,13 @@ func (authorUsecase *authorUsecase) GetByName(name string, userId int) (domain.A
 }
 
 // 新規登録
-func (authorUsecase *authorUsecase) Input(author *domain.Author) (domain.Author, error) {
+func (authorUsecase *authorUsecase) Input(ctx context.Context, author *domain.Author) (domain.Author, error) {
 
 	author.Id = 0
 	author.CreatedAt = time.Now()
 	author.UpdatedAt = time.Now()
 
-	err := authorUsecase.authorRepository.InputByAuthor(author)
+	err := authorUsecase.authorRepository.InputByAuthor(ctx, author)
 	if err != nil {
 		return *author, err
 	}
@@ -116,10 +117,10 @@ func (authorUsecase *authorUsecase) Input(author *domain.Author) (domain.Author,
 }
 
 // 更新
-func (authorUsecase *authorUsecase) Update(author *domain.Author) error {
+func (authorUsecase *authorUsecase) Update(ctx context.Context, author *domain.Author) error {
 
 	author.UpdatedAt = time.Now()
-	err := authorUsecase.authorRepository.UpdateByAuthor(author)
+	err := authorUsecase.authorRepository.UpdateByAuthor(ctx, author)
 	if err != nil {
 		return err
 	}
@@ -137,9 +138,9 @@ func (authorUsecase *authorUsecase) Update(author *domain.Author) error {
 }
 
 // 削除
-func (authorUsecase *authorUsecase) Delete(author *domain.Author, userId int) error {
+func (authorUsecase *authorUsecase) Delete(ctx context.Context, author *domain.Author, userId int) error {
 
-	err := authorUsecase.authorRepository.DeleteByAuthor(author, userId)
+	err := authorUsecase.authorRepository.DeleteByAuthor(ctx, author, userId)
 	if err != nil {
 		return err
 	}

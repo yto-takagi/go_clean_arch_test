@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/article/delivery"
 	authDelivery "go_clean_arch_test/app/article/delivery/auth"
 	"go_clean_arch_test/app/article/repository/sql"
@@ -30,7 +31,7 @@ func NewRouting(db *DB) *Routing {
 	r.Gin.Use(cors.New(cors.Config{
 		// 許可アクセス元
 		AllowOrigins: []string{
-			"http://localhost:62622",
+			"http://localhost:62723",
 		},
 		// AllowAllOrigins: true,
 		// アクセス許可HTTPメソッド(以下PUT,DELETEアクセス不可)
@@ -82,8 +83,8 @@ func (r *Routing) setRouting() {
 	loginRepository := authSql.NewLoginRepository(SqlConnect())
 
 	// usecase
-	articleUsecase := usecase.NewArticleUsecase(aritcleRepository)
 	authoreUsecase := usecase.NewAuthorUsecase(authorRepository)
+	articleUsecase := usecase.NewArticleUsecase(authoreUsecase, aritcleRepository, database.NewTransaction(r.DB.Connection))
 	signUpUsecase := authUsecase.NewSignUpUsecase(signUpRepository, loginRepository)
 	loginUsecase := authUsecase.NewLoginUsecase(loginRepository)
 

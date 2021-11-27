@@ -101,7 +101,7 @@ func (authorHandler *authorHandler) InputAuthor(ctx *gin.Context) {
 		zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	authorByName, err = authorHandler.authorUsecase.Input(&author)
+	authorByName, err = authorHandler.authorUsecase.Input(ctx, &author)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
 		return
@@ -154,7 +154,7 @@ func (authorHandler *authorHandler) UpdateAuthor(ctx *gin.Context) {
 		zap.String("■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在する場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Update"),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	err = authorHandler.authorUsecase.Update(&author)
+	err = authorHandler.authorUsecase.Update(ctx, &author)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
 		return
@@ -198,14 +198,14 @@ func (authorHandler *authorHandler) DeleteAuthor(ctx *gin.Context) {
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
-	err = authorHandler.authorUsecase.Delete(&author, user.Id)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-		return
-	}
+	// err = authorHandler.authorUsecase.Delete(&author, user.Id)
+	// if err != nil {
+	// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
+	// 	return
+	// }
 
 	// エラーじゃなければ(削除件数1以上)、紐づくarticle削除
-	err = authorHandler.articleusecase.DeleteByAuthor(author.Id)
+	err = authorHandler.articleusecase.DeleteByAuthor(ctx, &author, user.Id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
 		return

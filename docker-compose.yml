@@ -11,11 +11,8 @@ services:
       - ".:/go/src/app" # マウントディレクトリ
     ports:
       - "5000:8080" #golang webserver用のポート
-      # - "5050:5050" #delve用のポート
     depends_on:
       - "db"
-    # privileged: true # Delveで必要なので付与 セキュリティ面から本番環境では使うべきではない
-    # command: dlv debug --headless --listen=:5050 --log
 
   db:
     image: mysql:8.0
@@ -25,8 +22,6 @@ services:
       MYSQL_USER: go_clean_arch_test
       MYSQL_PASSWORD: password
       TZ: 'Asia/Tokyo'
-    # cap_add:
-    #   - SYS_NICE
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - db-data:/var/lib/mysql

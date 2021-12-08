@@ -3,11 +3,8 @@ package auth
 import (
 	form "go_clean_arch_test/app/domain/form"
 	repository "go_clean_arch_test/app/domain/repository/auth"
-	"log"
-	"time"
 
 	"github.com/jinzhu/gorm"
-	"go.uber.org/zap"
 )
 
 type SignUpRepository struct {
@@ -28,15 +25,6 @@ func (signUpRepository *SignUpRepository) SignUp(signUpForm *form.SignUpForm) er
 		Error; err != nil {
 		return err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ signup_sql.go ++++++++++++++++++++++",
-		zap.String("method", "SignUp"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(signUpForm)
 
 	return nil
 }

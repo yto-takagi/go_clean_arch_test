@@ -16,7 +16,6 @@ type User struct {
 
 // constructor
 func NewUser(id int, email, password string, updatedAt, createdAt time.Time) (*User, error) {
-
 	user := &User{
 		Id:        id,
 		Email:     email,
@@ -30,7 +29,6 @@ func NewUser(id int, email, password string, updatedAt, createdAt time.Time) (*U
 
 // setter
 func (user *User) Set(id int, email, password string, updatedAt, createdAt time.Time) error {
-
 	if email == "" {
 		return errors.New("email is required")
 	}

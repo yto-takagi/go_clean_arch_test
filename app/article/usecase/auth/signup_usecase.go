@@ -5,10 +5,7 @@ import (
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
 	repository "go_clean_arch_test/app/domain/repository/auth"
-	"log"
-	"time"
 
-	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -65,17 +62,6 @@ func (signUpUsecase *signUpUsecase) SignUp(email string, password string) (domai
 	userInfo.Password = signUp.Password
 	userInfo.CreatedAt = signUp.CreatedAt
 	userInfo.UpdatedAt = signUp.UpdatedAt
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ signup_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "SignUp"),
-		zap.String("param email", email),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■会員登録 userInfo■■■■■■■■■■■■■■■■■■■■■■■■■■")
-	log.Println(userInfo)
 
 	return userInfo, nil
 }

@@ -20,7 +20,6 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-
 	c := new(Config)
 
 	c.DB.Production.Dbms = "mysql"

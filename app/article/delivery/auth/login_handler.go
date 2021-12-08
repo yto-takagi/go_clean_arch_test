@@ -5,7 +5,6 @@ import (
 	"go_clean_arch_test/app/article/delivery"
 	loginUsecase "go_clean_arch_test/app/article/usecase/auth"
 	domain "go_clean_arch_test/app/domain/auth"
-	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -45,7 +44,6 @@ func (loginHandler *loginHandler) Login(ctx *gin.Context) {
 		// ハッシュ値でのパスワード比較
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password))
 		if err != nil {
-			// ctx.Status(http.StatusBadRequest)
 			ctx.JSON(http.StatusBadRequest, delivery.NewH(err.Error(), http.StatusBadRequest))
 		} else {
 			session := sessions.Default(ctx)
@@ -56,12 +54,6 @@ func (loginHandler *loginHandler) Login(ctx *gin.Context) {
 				accessToken := u.String()
 				session.Set(accessToken, string(loginUser))
 				session.Save()
-				log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Login Request.Header○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-				log.Println(ctx.Request.Header)
-				log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Login accessToken○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-				log.Println(accessToken)
-				log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○Login userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-				log.Println(session.Get(accessToken))
 				ctx.SetSameSite(http.SameSiteDefaultMode)
 
 				ctx.JSON(http.StatusOK, delivery.NewH(http.StatusText(http.StatusOK), accessToken))

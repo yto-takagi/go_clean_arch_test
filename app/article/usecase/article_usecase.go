@@ -6,7 +6,6 @@ import (
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
 	"go_clean_arch_test/app/domain/repository"
-	"log"
 	"time"
 
 	"go.uber.org/zap"
@@ -37,23 +36,12 @@ func NewArticleUsecase(authorUsecase AuthorUsecase, articleRepository repository
 
 // 全件取得
 func (articleUsecase *articleUsecase) GetAll(userId int) ([]domain.Article, error) {
-	// db := usecase.DB.Connect()
-	// defer db.Close()
 
 	var article []domain.Article
 	articles, err := articleUsecase.articleRepository.GetAll(article, userId)
 	if err != nil {
 		return nil, err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetAll"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(articles)
 
 	return articles, nil
 }
@@ -70,12 +58,10 @@ func (articleUsecase *articleUsecase) GetById(id int) (domain.Article, error) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetById"),
+	logger.Info("GetById",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articleById)
 
 	return articleById, nil
 }
@@ -92,12 +78,10 @@ func (articleUsecase *articleUsecase) GetByIdAndUserId(id int, userId int) (doma
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetByIdAndUserId"),
+	logger.Info("GetByIdAndUserId",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articleByIdAndUserId)
 
 	return articleByIdAndUserId, nil
 }
@@ -114,12 +98,10 @@ func (articleUsecase *articleUsecase) GetByAuthorIdAndUserId(id int, userId int)
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetByAuthorIdAndUserId"),
+	logger.Info("GetByAuthorIdAndUserId",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articleByIdAndUserId)
 
 	return articleByIdAndUserId, nil
 }
@@ -136,12 +118,10 @@ func (articleUsecase *articleUsecase) GetLikeByTitleAndContent(searchContent str
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetLikeByTitleAndContent"),
+	logger.Info("GetLikeByTitleAndContent",
 		zap.String("param searchContent", searchContent),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articles)
 
 	return articles, nil
 }
@@ -157,26 +137,14 @@ func (articleUsecase *articleUsecase) Input(ctx context.Context, article *domain
 		if err != nil {
 			return article, err
 		}
-		// if err != nil {
-		// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-		// 	return
-		// }
-		// TODO 空チェックできてる？
+
 		if authorByName.Id == 0 {
 			// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
-			log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 			authorByName, err = articleUsecase.authorUsecase.Input(ctx, &article.Author)
 			if err != nil {
 				return article, err
 			}
-			// if err != nil {
-			// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-			// 	return
-			// }
 		}
-
-		log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■authorByName.Id■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
-		log.Println(authorByName.Id)
 
 		article.Author.Id = authorByName.Id
 
@@ -196,14 +164,6 @@ func (articleUsecase *articleUsecase) Input(ctx context.Context, article *domain
 		article.CreatedAt = ArticleForm.CreatedAt
 		article.UpdatedAt = ArticleForm.UpdatedAt
 
-		// log
-		oldTime := time.Now()
-		logger, _ := zap.NewProduction()
-		logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-			zap.String("method", "Input"),
-			zap.Duration("elapsed", time.Now().Sub(oldTime)),
-		)
-		log.Println(article)
 		return article, nil
 	})
 
@@ -215,25 +175,15 @@ func (articleUsecase *articleUsecase) Input(ctx context.Context, article *domain
 func (articleUsecase *articleUsecase) Update(ctx context.Context, article *domain.Article) error {
 
 	_, err := articleUsecase.trancaction.DoInTx(ctx, func(ctx context.Context) (interface{}, error) {
-		// TODO カテゴリーが変わってる場合
-		// カテゴリー検索(カテゴリー名で)
 		authorByName, err := articleUsecase.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
 		if err != nil {
 			return article, err
 		}
-		// TODO 空チェックできてる？
 		if authorByName.Id == 0 {
-			// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
-			log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 			articleUsecase.authorUsecase.Input(ctx, &article.Author)
 		} else {
-			// カテゴリー存在したらそのIdで記事更新
-			log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 			articleUsecase.authorUsecase.Update(ctx, &article.Author)
 		}
-
-		log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-		log.Println(&article)
 
 		ArticleForm := form.ArticleForm{}
 		ArticleForm.Id = article.Id
@@ -250,15 +200,6 @@ func (articleUsecase *articleUsecase) Update(ctx context.Context, article *domai
 		article.Id = ArticleForm.Id
 		article.CreatedAt = ArticleForm.CreatedAt
 		article.UpdatedAt = ArticleForm.UpdatedAt
-
-		// log
-		oldTime := time.Now()
-		logger, _ := zap.NewProduction()
-		logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-			zap.String("method", "Update"),
-			zap.Duration("elapsed", time.Now().Sub(oldTime)),
-		)
-		log.Println(article)
 
 		return article, nil
 	})
@@ -279,8 +220,7 @@ func (articleUsecase *articleUsecase) Delete(id int) error {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "Delete"),
+	logger.Info("Delete",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)

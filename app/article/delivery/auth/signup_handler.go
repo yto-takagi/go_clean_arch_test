@@ -5,7 +5,6 @@ import (
 	"go_clean_arch_test/app/article/delivery"
 	signUpUsecase "go_clean_arch_test/app/article/usecase/auth"
 	domain "go_clean_arch_test/app/domain/auth"
-	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -36,8 +35,6 @@ func (signUpHandler *signUpHandler) SignUp(ctx *gin.Context) {
 	} else {
 		// 会員登録処理
 		user, err := signUpHandler.signUpUsecase.SignUp(request.Email, request.Password)
-		log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■会員登録 user■■■■■■■■■■■■■■■■■■■■■■■■■■")
-		log.Println(user)
 
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, delivery.NewH(err.Error(), http.StatusInternalServerError))

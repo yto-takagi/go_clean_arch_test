@@ -20,7 +20,6 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-
 	c := new(Config)
 
 	c.DB.Production.Dbms = "mysql"
@@ -29,7 +28,7 @@ func NewConfig() *Config {
 	c.DB.Production.Protocol = "tcp(db:3306)"
 	c.DB.Production.Dbname = "go_clean_arch"
 
-	c.Routing.Port = ":8080"
+	c.Routing.Port = ":5000"
 
 	return c
 }

@@ -4,18 +4,15 @@ services:
     build:
       context: .
       dockerfile: DockerFile
-    # command: /bin/sh -c "go run app/main.go"
+    command: /bin/sh -c "go run /go/src/app/main.go"
     stdin_open: true
     tty: true
     volumes:
       - ".:/go/src/app" # マウントディレクトリ
     ports:
-      - "8080:8080" #golang webserver用のポート
-      - "5050:5050" #delve用のポート
+      - "5000:8080" #golang webserver用のポート
     depends_on:
       - "db"
-    privileged: true # Delveで必要なので付与 セキュリティ面から本番環境では使うべきではない
-    command: dlv debug --headless --listen=:5050 --log
 
   db:
     image: mysql:8.0

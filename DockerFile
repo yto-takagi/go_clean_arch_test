@@ -1,17 +1,5 @@
 FROM golang:latest
 
-# RUN mkdir /go/src/app
-# WORKDIR /go/src/app
-
-# appディレクトリの作成
-# RUN mkdir /go/src/app
-# ワーキングディレクトリの設定
-# ホストのファイルをコンテナの作業ディレクトリに移行
-# ADD . /go/src/app
-
-# RUN go env -w GO111MODULE=auto
-# COPY . .
-
 # WORKDIR /app
 # 依存ライブラリをダウンロードする(キャッシュを使いたいので、これを先にやる)
 WORKDIR /go/src/app
@@ -19,12 +7,9 @@ ENV GO111MODULE=on
 COPY go.mod go.sum ./
 RUN go mod download
 
-# ENV GO111MODULE=on
-# COPY app/ /go/src/app/
-# WORKDIR /go/src/app
-
 RUN go get github.com/gin-gonic/gin
 RUN go get github.com/go-sql-driver/mysql
 RUN go get github.com/jinzhu/gorm
 RUN go get github.com/go-delve/delve/cmd/dlv
 RUN go get go.uber.org/zap
+RUN go get github.com/gin-contrib/cors

@@ -34,8 +34,7 @@ func (loginRepository *LoginRepository) GetByEmail(email string, user domain.Use
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ login_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetByEmail"),
+	logger.Info("GetByEmail",
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 	log.Println(user)

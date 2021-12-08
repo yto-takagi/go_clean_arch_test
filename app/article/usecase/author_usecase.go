@@ -4,7 +4,6 @@ import (
 	"context"
 	"go_clean_arch_test/app/domain"
 	"go_clean_arch_test/app/domain/repository"
-	"log"
 	"time"
 
 	"go.uber.org/zap"
@@ -37,15 +36,6 @@ func (authorUsecase *authorUsecase) GetByUser(userId int) ([]domain.Author, erro
 		return nil, err
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetByUser"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(authorByUser)
-
 	return authorByUser, nil
 }
 
@@ -61,12 +51,10 @@ func (authorUsecase *authorUsecase) GetByAuthorIdAndUserId(id int, userId int) (
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetById"),
+	logger.Info("GetById",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(authorByIdAndUserId)
 
 	return authorByIdAndUserId, nil
 }
@@ -83,12 +71,10 @@ func (authorUsecase *authorUsecase) GetByName(name string, userId int) (domain.A
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "GetByName"),
+	logger.Info("GetByName",
 		zap.String("param name", name),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(authorByName)
 
 	return authorByName, nil
 }
@@ -105,14 +91,6 @@ func (authorUsecase *authorUsecase) Input(ctx context.Context, author *domain.Au
 		return *author, err
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "Input"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(author)
 	return *author, nil
 }
 
@@ -125,15 +103,6 @@ func (authorUsecase *authorUsecase) Update(ctx context.Context, author *domain.A
 		return err
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "Input"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(author)
-
 	return nil
 }
 
@@ -144,14 +113,6 @@ func (authorUsecase *authorUsecase) Delete(ctx context.Context, author *domain.A
 	if err != nil {
 		return err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_usecase.go ++++++++++++++++++++++",
-		zap.String("method", "Delete"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
 
 	return nil
 }

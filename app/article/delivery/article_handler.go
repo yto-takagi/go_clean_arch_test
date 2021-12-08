@@ -4,7 +4,6 @@ import (
 	"go_clean_arch_test/app/article/usecase"
 	loginUsecase "go_clean_arch_test/app/article/usecase/auth"
 	"go_clean_arch_test/app/domain"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,8 +43,6 @@ func (articleHandler *articleHandler) GetAll(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
 		return
 	}
-	log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○User.ID○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	log.Println(user.Id)
 
 	articles, err := articleHandler.articleusecase.GetAll(user.Id)
 	if err != nil {
@@ -66,8 +63,7 @@ func (articleHandler *articleHandler) GetById(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-		zap.String("method", "GetById"),
+	logger.Info("GetById",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
@@ -93,8 +89,7 @@ func (articleHandler *articleHandler) GetByAuthorId(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-		zap.String("method", "GetByAuthorId"),
+	logger.Info("GetByAuthorId",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
@@ -112,8 +107,7 @@ func (articleHandler *articleHandler) GetLikeByTitleAndContent(ctx *gin.Context)
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-		zap.String("method", "GetLikeByTitleAndContent"),
+	logger.Info("GetLikeByTitleAndContent",
 		zap.String("param searchContent", ctx.Query("content")),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
@@ -141,8 +135,7 @@ func (articleHandler *articleHandler) Input(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-		zap.String("method", "Input"),
+	logger.Info("Input",
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
@@ -175,8 +168,7 @@ func (articleHandler *articleHandler) Update(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-		zap.String("method", "Update"),
+	logger.Info("Update",
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
@@ -194,36 +186,6 @@ func (articleHandler *articleHandler) Update(ctx *gin.Context) {
 	}
 	article.Author.UserId = user.Id
 
-	// // TODO カテゴリーが変わってる場合
-	// // カテゴリー検索(カテゴリー名で)
-	// authorByName, err := articleHandler.authorUsecase.GetByName(article.Author.Name, article.Author.UserId)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
-	// 	return
-	// }
-	// // TODO 空チェックできてる？
-	// if authorByName.Id == 0 {
-	// 	// カテゴリー存在しなければ、カテゴリー新規登録してそのIdで記事更新
-	// 	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-	// 		zap.String("method", "Update"),
-	// 		zap.String("■■■■■■■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在しない場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Input"),
-	// 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	// 	)
-	// 	articleHandler.authorUsecase.Input(&article.Author)
-	// } else {
-	// 	// カテゴリー存在したらそのIdで記事更新
-	// 	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-	// 		zap.String("method", "Update"),
-	// 		zap.String("■■■■■■■■■■■■■■■■■■■■■■カテゴリー存在する場合■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■", "Update"),
-	// 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	// 	)
-	// 	articleHandler.authorUsecase.Update(&article.Author)
-	// }
-
-	// log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○テスト○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-	// log.Println(&article)
-
-	// TODO Author.ID更新されているか？
 	err = articleHandler.articleusecase.Update(ctx, &article)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), article))
@@ -242,7 +204,6 @@ func (articleHandler *articleHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	// ログインユーザーID且つ、記事ID データが存在しなければ、302で返す
 	user, err := articleHandler.loginUsecase.GetLoginUser(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, NewH(err.Error(), nil))
@@ -261,8 +222,7 @@ func (articleHandler *articleHandler) Delete(ctx *gin.Context) {
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_handler.go ++++++++++++++++++++++",
-		zap.String("method", "Delete"),
+	logger.Info("Delete",
 		zap.Int("param id", article.Id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)

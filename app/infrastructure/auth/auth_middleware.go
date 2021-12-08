@@ -3,7 +3,6 @@ package auth
 import (
 	"encoding/json"
 	"go_clean_arch_test/app/domain"
-	"log"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -17,8 +16,6 @@ func LoginCheckMiddleware() gin.HandlerFunc {
 		session := sessions.Default(ctx)
 		// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
 		loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
-		log.Println("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○LoginCheckMiddleware userInfo○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○")
-		log.Println(session.Get(accessToken))
 
 		if err != nil {
 			ctx.Status(http.StatusUnauthorized)

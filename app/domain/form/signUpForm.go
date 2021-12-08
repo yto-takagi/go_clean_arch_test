@@ -16,7 +16,6 @@ type SignUpForm struct {
 
 // constructor
 func NewSignUpForm(id int, email, password string, updatedAt, createdAt time.Time) (*SignUpForm, error) {
-
 	signUpForm := &SignUpForm{
 		Id:        id,
 		Email:     email,
@@ -30,7 +29,6 @@ func NewSignUpForm(id int, email, password string, updatedAt, createdAt time.Tim
 
 // setter
 func (signUpForm *SignUpForm) Set(id int, email, password string, updatedAt, createdAt time.Time) error {
-
 	if email == "" || password == "" {
 		return errors.New("email and password is required")
 	}

@@ -15,7 +15,6 @@ type Author struct {
 
 // constructor
 func NewAuthor(id int, name string, userId int, updatedAt, createdAt time.Time) (*Author, error) {
-
 	author := &Author{
 		Id:        id,
 		Name:      name,
@@ -29,7 +28,6 @@ func NewAuthor(id int, name string, userId int, updatedAt, createdAt time.Time) 
 
 // setter
 func (author *Author) Set(id int, name string, userId int, updatedAt, createdAt time.Time) error {
-
 	if name == "" {
 		return errors.New("name is required")
 	}

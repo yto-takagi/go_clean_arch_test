@@ -6,7 +6,6 @@ import (
 	"go_clean_arch_test/app/article/database"
 	"go_clean_arch_test/app/domain"
 	"go_clean_arch_test/app/domain/repository"
-	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -37,15 +36,6 @@ func (authorRepository *AuthorRepository) GetAuthorByUser(author []domain.Author
 		}
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetAuthorByUser"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(author)
-
 	return author, nil
 
 }
@@ -67,12 +57,10 @@ func (authorRepository *AuthorRepository) GetAuthorByAuthorIdAndUserId(author do
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetByAuthorIdAndUserId"),
+	logger.Info("GetByAuthorIdAndUserId",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(author)
 
 	return author, nil
 
@@ -95,12 +83,10 @@ func (authorRepository *AuthorRepository) GetByAuthorName(author domain.Author, 
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetByName"),
+	logger.Info("GetByName",
 		zap.String("param name", name),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(author)
 
 	return author, nil
 
@@ -119,15 +105,6 @@ func (authorRepository *AuthorRepository) InputByAuthor(ctx context.Context, aut
 		return err
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_sql.go ++++++++++++++++++++++",
-		zap.String("method", "Input"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(author)
-
 	return nil
 }
 
@@ -144,15 +121,6 @@ func (authorRepository *AuthorRepository) UpdateByAuthor(ctx context.Context, au
 		Error; err != nil {
 		return err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_sql.go ++++++++++++++++++++++",
-		zap.String("method", "Update"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(author)
 
 	return nil
 }
@@ -171,14 +139,6 @@ func (authorRepository *AuthorRepository) DeleteByAuthor(ctx context.Context, au
 		Error; err != nil {
 		return err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ author_sql.go ++++++++++++++++++++++",
-		zap.String("method", "Delete"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
 
 	return nil
 }

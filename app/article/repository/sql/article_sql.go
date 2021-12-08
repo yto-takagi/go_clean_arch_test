@@ -7,7 +7,6 @@ import (
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
 	"go_clean_arch_test/app/domain/repository"
-	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -26,8 +25,6 @@ func NewArticleRepository(conn *gorm.DB) repository.ArticleRepository {
 
 // 全件取得
 func (articleRepository *ArticleRepository) GetAll(article []domain.Article, userId int) ([]domain.Article, error) {
-	// db.Order("created_at asc").Find(&articles)
-	// db.Debug().Table("article").Find(&article)
 	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
@@ -40,15 +37,6 @@ func (articleRepository *ArticleRepository) GetAll(article []domain.Article, use
 			return nil, err
 		}
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetAll"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(article)
 
 	return article, nil
 }
@@ -71,12 +59,10 @@ func (articleRepository *ArticleRepository) GetById(article domain.Article, id i
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetById"),
+	logger.Info("GetById",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(article)
 
 	return article, nil
 
@@ -100,12 +86,10 @@ func (articleRepository *ArticleRepository) GetByIdAndUserId(article domain.Arti
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetById"),
+	logger.Info("GetByIdAndUserId",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(article)
 
 	return article, nil
 
@@ -129,12 +113,10 @@ func (articleRepository *ArticleRepository) GetByAuthorIdAndUserId(articles []do
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "GetByAuthorIdAndUserId"),
+	logger.Info("GetByAuthorIdAndUserId",
 		zap.Int("param id", id),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articles)
 
 	return articles, nil
 
@@ -162,12 +144,10 @@ func (articleRepository *ArticleRepository) SearchContent(articles []domain.Arti
 	// log
 	oldTime := time.Now()
 	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "SearchContent"),
+	logger.Info("SearchContent",
 		zap.String("param searchContent", searchContent),
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println(articles)
 
 	return articles, nil
 
@@ -186,15 +166,6 @@ func (articleRepository *ArticleRepository) Input(ctx context.Context, articleFo
 		Error; err != nil {
 		return err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "Input"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(articleForm)
 
 	return nil
 
@@ -221,15 +192,6 @@ func (articleRepository *ArticleRepository) Update(ctx context.Context, articleF
 		return err
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "Update"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-	log.Println(articleForm)
-
 	return nil
 }
 
@@ -244,21 +206,11 @@ func (articleRepository *ArticleRepository) Delete(articleForm *form.ArticleForm
 		return err
 	}
 
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "Delete"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
-
 	return nil
 }
 
 // 削除(authorId指定)
 func (articleRepository *ArticleRepository) DeleteByAuthorId(ctx context.Context, articleForm *form.ArticleForm) error {
-	log.Println("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■articleForm.AuthorId■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
-	log.Println(articleForm.AuthorId)
 	dao, ok := database.GetTx(ctx)
 	if !ok {
 		dao = articleRepository.Conn
@@ -271,14 +223,6 @@ func (articleRepository *ArticleRepository) DeleteByAuthorId(ctx context.Context
 		Error; err != nil {
 		return err
 	}
-
-	// log
-	oldTime := time.Now()
-	logger, _ := zap.NewProduction()
-	logger.Info("++++++++++++++++++++++ article_sql.go ++++++++++++++++++++++",
-		zap.String("method", "DeleteByAuthorId"),
-		zap.Duration("elapsed", time.Now().Sub(oldTime)),
-	)
 
 	return nil
 }

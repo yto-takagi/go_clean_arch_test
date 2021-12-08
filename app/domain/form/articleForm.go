@@ -7,8 +7,6 @@ import (
 
 // struct
 type ArticleForm struct {
-	// gorm.ModelはID, CreatedAt, UpdatedAt, DeletedAtをフィールドに持つ構造体
-	// gorm.Model
 	Id        int       `json:"id"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
@@ -19,7 +17,6 @@ type ArticleForm struct {
 
 // constructor
 func NewArticleForm(id int, title, content string, updatedAt, createdAt time.Time, authorId int) (*ArticleForm, error) {
-
 	articleForm := &ArticleForm{
 		Id:        id,
 		Title:     title,
@@ -34,7 +31,6 @@ func NewArticleForm(id int, title, content string, updatedAt, createdAt time.Tim
 
 // setter
 func (articleForm *ArticleForm) Set(id int, title, content string, updatedAt, createdAt time.Time, authorId int) error {
-
 	if title == "" {
 		return errors.New("title is required")
 	}

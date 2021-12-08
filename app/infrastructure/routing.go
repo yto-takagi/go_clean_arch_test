@@ -33,7 +33,6 @@ func NewRouting(db *DB) *Routing {
 		AllowOrigins: []string{
 			"http://localhost:62723",
 		},
-		// AllowAllOrigins: true,
 		// アクセス許可HTTPメソッド(以下PUT,DELETEアクセス不可)
 		AllowMethods: []string{
 			"POST",
@@ -52,9 +51,6 @@ func NewRouting(db *DB) *Routing {
 			"Set-Cookie",
 			"Cookie",
 		},
-		// AllowOrigins: []string{"*"},
-		// AllowMethods: []string{"*"},
-		// AllowHeaders: []string{"*"},
 		// cookie必要許可
 		AllowCredentials: true,
 		// preflightリクエストの結果をキャッシュする時間
@@ -62,8 +58,6 @@ func NewRouting(db *DB) *Routing {
 	}))
 
 	// セッションCookieの設定
-	// secure属性がtrueになっているため、httpホストでcookie情報を取得できていない？
-	// cookieのsamesiteをnoneにする必要がありそう？
 	store := cookie.NewStore([]byte("secret"))
 	store.Options(sessions.Options{
 		Secure:   false,

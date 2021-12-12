@@ -3,7 +3,6 @@ package auth
 import (
 	"go_clean_arch_test/app/article/repository/entity"
 	repository "go_clean_arch_test/app/domain/repository/auth"
-	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -37,8 +36,6 @@ func (loginRepository *LoginRepository) GetByEmail(email string, user entity.Use
 	logger.Info("GetByEmail",
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
-	log.Println("user sql■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
-	log.Println(user)
 
 	return user, nil
 }

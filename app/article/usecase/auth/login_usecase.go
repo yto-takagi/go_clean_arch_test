@@ -6,7 +6,6 @@ import (
 	"go_clean_arch_test/app/article/repository/entity"
 	auth "go_clean_arch_test/app/domain/auth"
 	repository "go_clean_arch_test/app/domain/repository/auth"
-	"log"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -54,12 +53,8 @@ func (loginUsecase *loginUsecase) GetLoginUser(ctx *gin.Context) (request.User, 
 	accessToken := ctx.Request.Header.Get("accessToken")
 
 	session := sessions.Default(ctx)
-	log.Print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■session: ")
-	log.Print(session)
 	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
 	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
-	log.Print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■loginUserJson: ")
-	log.Print(loginUserJson)
 
 	var loginInfo request.User
 	if err != nil {
@@ -75,8 +70,6 @@ func (loginUsecase *loginUsecase) GetLoginUser(ctx *gin.Context) (request.User, 
 			ctx.Next()
 		}
 	}
-	log.Print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■loginInfo: ")
-	log.Print(loginInfo.Id)
 	return loginInfo, nil
 
 }

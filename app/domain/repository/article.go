@@ -2,17 +2,17 @@ package repository
 
 import (
 	"context"
-	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/article/repository/entity"
 	form "go_clean_arch_test/app/domain/form"
 )
 
 // AritcleRepository interface
 type ArticleRepository interface {
-	GetAll(article []domain.Article, userId int) ([]domain.Article, error)
-	GetById(article domain.Article, id int) (domain.Article, error)
-	GetByIdAndUserId(article domain.Article, id int, userId int) (domain.Article, error)
-	GetByAuthorIdAndUserId(articles []domain.Article, id int, userId int) ([]domain.Article, error)
-	SearchContent(articles []domain.Article, searchContent string, userId int) ([]domain.Article, error)
+	GetAll(article []entity.Article, userId int) ([]entity.Article, error)
+	GetById(article entity.Article, id int) (entity.Article, error)
+	GetByIdAndUserId(article entity.Article, id int, userId int) (entity.Article, error)
+	GetByAuthorIdAndUserId(articles []entity.Article, id int, userId int) ([]entity.Article, error)
+	SearchContent(articles []entity.Article, searchContent string, userId int) ([]entity.Article, error)
 	Input(ctx context.Context, articleForm *form.ArticleForm) error
 	Update(ctx context.Context, articleForm *form.ArticleForm) error
 	Delete(articleForm *form.ArticleForm) error

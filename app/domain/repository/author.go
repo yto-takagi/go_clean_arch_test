@@ -2,15 +2,15 @@ package repository
 
 import (
 	"context"
-	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/article/repository/entity"
 )
 
 // AuthorRepository interface
 type AuthorRepository interface {
-	GetAuthorByUser(author []domain.Author, userId int) ([]domain.Author, error)
-	GetAuthorByAuthorIdAndUserId(author domain.Author, id int, userId int) (domain.Author, error)
-	GetByAuthorName(author domain.Author, name string, userId int) (domain.Author, error)
-	InputByAuthor(ctx context.Context, author *domain.Author) error
-	UpdateByAuthor(ctx context.Context, author *domain.Author) error
-	DeleteByAuthor(ctx context.Context, author *domain.Author, userId int) error
+	GetAuthorByUser(author []entity.Author, userId int) ([]entity.Author, error)
+	GetAuthorByAuthorIdAndUserId(author entity.Author, id int, userId int) (entity.Author, error)
+	GetByAuthorName(author entity.Author, name string, userId int) (entity.Author, error)
+	InputByAuthor(ctx context.Context, author *entity.Author) error
+	UpdateByAuthor(ctx context.Context, author *entity.Author) error
+	DeleteByAuthor(ctx context.Context, author *entity.Author, userId int) error
 }

@@ -2,9 +2,11 @@ package auth
 
 import (
 	"errors"
+	"go_clean_arch_test/app/article/repository/entity"
 	"go_clean_arch_test/app/domain"
 	form "go_clean_arch_test/app/domain/form"
 	repository "go_clean_arch_test/app/domain/repository/auth"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,36 +34,30 @@ var (
 // 会員登録
 func (signUpUsecase *signUpUsecase) SignUp(email string, password string) (domain.User, error) {
 
-	var user domain.User
-	var signUp form.SignUpForm
-	signUp.Email = email
-	signUp.Password = password
+	var user entity.User
+	var userInfo domain.User
+	signUp, err := form.NewSignUpForm(0, email, password, time.Now(), time.Now())
+	if err != nil {
+		return userInfo, err
+	}
 
 	// email存在チェック
-	user, err := signUpUsecase.loginUpRepository.GetByEmail(email, user)
-	if err != nil {
-		return user, err
-	}
-	if user.Id != 0 {
-		return user, ErrEmailIsExists
+	user, _ = signUpUsecase.loginUpRepository.GetByEmail(email, user)
+	if userInfo.GetId() != 0 {
+		return userInfo, ErrEmailIsExists
 	}
 
 	// 会員登録
 	// パスワードハッシュ化
 	hashed, _ := bcrypt.GenerateFromPassword([]byte(signUp.Password), 10)
-	signUp.Password = string(hashed)
+	signUp.Set(signUp.Id, signUp.Email, string(hashed), signUp.UpdatedAt, signUp.CreatedAt)
 
-	var userInfo domain.User
-	err = signUpUsecase.signUpRepository.SignUp(&signUp)
+	err = signUpUsecase.signUpRepository.SignUp(signUp)
 	if err != nil {
 		return userInfo, err
 	}
 
-	userInfo.Id = signUp.Id
-	userInfo.Email = signUp.Email
-	userInfo.Password = signUp.Password
-	userInfo.CreatedAt = signUp.CreatedAt
-	userInfo.UpdatedAt = signUp.UpdatedAt
+	userInfo.Set(signUp.Id, signUp.Email, signUp.Password, signUp.UpdatedAt, signUp.CreatedAt)
 
 	return userInfo, nil
 }

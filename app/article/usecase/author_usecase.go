@@ -2,7 +2,9 @@ package usecase
 
 import (
 	"context"
+	"go_clean_arch_test/app/article/repository/entity"
 	"go_clean_arch_test/app/domain"
+	channel "go_clean_arch_test/app/domain/channel"
 	"go_clean_arch_test/app/domain/repository"
 	"time"
 
@@ -11,42 +13,59 @@ import (
 
 // AuthorUsecase interface
 type AuthorUsecase interface {
-	GetByUser(userId int) ([]domain.Author, error)
+	GetByUser(userId int) ([]domain.Author, domain.ExpPool, error)
 	GetByAuthorIdAndUserId(id int, userId int) (domain.Author, error)
 	GetByName(name string, userId int) (domain.Author, error)
 	Input(ctx context.Context, author *domain.Author) (domain.Author, error)
 	Update(ctx context.Context, author *domain.Author) error
 	Delete(ctx context.Context, author *domain.Author, userId int) error
+
+	getAuthorByUserChannel(userId int, ch chan *channel.AuthorGetChannel)
+	getExpByUserChannel(userId int, ch chan *channel.ExpPoolGetChannel)
 }
 type authorUsecase struct {
+	expPoolUsecase   ExpPoolUsecase
 	authorRepository repository.AuthorRepository
 }
 
 // NewAuthorUsecase constructor
-func NewAuthorUsecase(authorRepository repository.AuthorRepository) AuthorUsecase {
-	return &authorUsecase{authorRepository: authorRepository}
+func NewAuthorUsecase(expPoolUsecase ExpPoolUsecase, authorRepository repository.AuthorRepository) AuthorUsecase {
+	return &authorUsecase{expPoolUsecase: expPoolUsecase, authorRepository: authorRepository}
 }
 
 // ユーザーIDに紐づくカテゴリー全件取得
-func (authorUsecase *authorUsecase) GetByUser(userId int) ([]domain.Author, error) {
+func (authorUsecase *authorUsecase) GetByUser(userId int) ([]domain.Author, domain.ExpPool, error) {
 
-	var author []domain.Author
-	authorByUser, err := authorUsecase.authorRepository.GetAuthorByUser(author, userId)
-	if err != nil {
-		return nil, err
+	chByGetAuthor := make(chan *channel.AuthorGetChannel)
+	chByGetExp := make(chan *channel.ExpPoolGetChannel)
+	// 新規登録
+	go authorUsecase.getAuthorByUserChannel(userId, chByGetAuthor)
+	// 経験値登録、レベルアップ
+	go authorUsecase.getExpByUserChannel(userId, chByGetExp)
+
+	author := <-chByGetAuthor
+	expPool := <-chByGetExp
+	var err error
+	if author.GetErr() != nil {
+		err = author.GetErr()
+	} else if expPool.GetErr() != nil {
+		err = expPool.GetErr()
 	}
 
-	return authorByUser, nil
+	return author.GetAuthor(), expPool.GetExpPool(), err
 }
 
 // Id、ユーザーID指定
 func (authorUsecase *authorUsecase) GetByAuthorIdAndUserId(id int, userId int) (domain.Author, error) {
 
-	var author domain.Author
-	authorByIdAndUserId, err := authorUsecase.authorRepository.GetAuthorByAuthorIdAndUserId(author, id, userId)
+	var author entity.Author
+	var authorModel domain.Author
+	author, err := authorUsecase.authorRepository.GetAuthorByAuthorIdAndUserId(author, id, userId)
 	if err != nil {
-		return author, err
+		return authorModel, err
 	}
+
+	authorModel.Set(author.Id, author.Name, author.UserId, author.UpdatedAt, author.CreatedAt)
 
 	// log
 	oldTime := time.Now()
@@ -56,17 +75,20 @@ func (authorUsecase *authorUsecase) GetByAuthorIdAndUserId(id int, userId int) (
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
-	return authorByIdAndUserId, nil
+	return authorModel, nil
 }
 
 // カテゴリー名検索
 func (authorUsecase *authorUsecase) GetByName(name string, userId int) (domain.Author, error) {
 
-	var author domain.Author
-	authorByName, err := authorUsecase.authorRepository.GetByAuthorName(author, name, userId)
+	var author entity.Author
+	var authorModel domain.Author
+	author, err := authorUsecase.authorRepository.GetByAuthorName(author, name, userId)
 	if err != nil {
-		return author, err
+		return authorModel, err
 	}
+
+	authorModel.Set(author.Id, author.Name, author.UserId, author.UpdatedAt, author.CreatedAt)
 
 	// log
 	oldTime := time.Now()
@@ -76,17 +98,20 @@ func (authorUsecase *authorUsecase) GetByName(name string, userId int) (domain.A
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
 
-	return authorByName, nil
+	return authorModel, nil
 }
 
 // 新規登録
 func (authorUsecase *authorUsecase) Input(ctx context.Context, author *domain.Author) (domain.Author, error) {
 
-	author.Id = 0
-	author.CreatedAt = time.Now()
-	author.UpdatedAt = time.Now()
+	var authorEntity entity.Author
+	authorEntity.Id = 0
+	authorEntity.Name = author.GetName()
+	authorEntity.UserId = author.GetUserId()
+	authorEntity.UpdatedAt = time.Now()
+	authorEntity.CreatedAt = time.Now()
 
-	err := authorUsecase.authorRepository.InputByAuthor(ctx, author)
+	err := authorUsecase.authorRepository.InputByAuthor(ctx, &authorEntity)
 	if err != nil {
 		return *author, err
 	}
@@ -97,8 +122,13 @@ func (authorUsecase *authorUsecase) Input(ctx context.Context, author *domain.Au
 // 更新
 func (authorUsecase *authorUsecase) Update(ctx context.Context, author *domain.Author) error {
 
-	author.UpdatedAt = time.Now()
-	err := authorUsecase.authorRepository.UpdateByAuthor(ctx, author)
+	var authorEntity entity.Author
+	authorEntity.Id = author.GetId()
+	authorEntity.Name = author.GetName()
+	authorEntity.UserId = author.GetUserId()
+	authorEntity.UpdatedAt = time.Now()
+	authorEntity.CreatedAt = author.GetCreatedAt()
+	err := authorUsecase.authorRepository.UpdateByAuthor(ctx, &authorEntity)
 	if err != nil {
 		return err
 	}
@@ -109,10 +139,46 @@ func (authorUsecase *authorUsecase) Update(ctx context.Context, author *domain.A
 // 削除
 func (authorUsecase *authorUsecase) Delete(ctx context.Context, author *domain.Author, userId int) error {
 
-	err := authorUsecase.authorRepository.DeleteByAuthor(ctx, author, userId)
+	var authorEntity entity.Author
+	authorEntity.Id = author.GetId()
+	authorEntity.Name = author.GetName()
+	authorEntity.UserId = author.GetUserId()
+	err := authorUsecase.authorRepository.DeleteByAuthor(ctx, &authorEntity, userId)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// カテゴリー取得チャネル
+func (authorUsecase *authorUsecase) getAuthorByUserChannel(userId int, ch chan *channel.AuthorGetChannel) {
+
+	var authors []domain.Author
+	var authorEntities []entity.Author
+	var err error
+	authorGetChannel, err := channel.NewAuthorGetChannel(authors, err)
+
+	authorByUsers, err := authorUsecase.authorRepository.GetAuthorByUser(authorEntities, userId)
+	for _, author := range authorByUsers {
+		var authorModel domain.Author
+		authorModel.Set(author.Id, author.Name, author.UserId, author.UpdatedAt, author.CreatedAt)
+		authors = append(authors, authorModel)
+	}
+
+	authorGetChannel.Set(authors, err)
+	ch <- authorGetChannel
+}
+
+// 経験値・レベル取得チャネル
+func (authorUsecase *authorUsecase) getExpByUserChannel(userId int, ch chan *channel.ExpPoolGetChannel) {
+
+	var expPool domain.ExpPool
+	var err error
+	expPoolGetChannel, err := channel.NewExpPoolGetChannel(expPool, err)
+
+	expPool, err = authorUsecase.expPoolUsecase.GetByUserId(userId)
+
+	expPoolGetChannel.Set(expPool, err)
+	ch <- expPoolGetChannel
 }

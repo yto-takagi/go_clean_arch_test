@@ -73,12 +73,17 @@ func (r *Routing) setRouting() {
 	// repository
 	aritcleRepository := sql.NewArticleRepository(SqlConnect())
 	authorRepository := sql.NewAuthorRepository(SqlConnect())
+	expPoolRepository := sql.NewExpPoolRepository(SqlConnect())
+	lvRepository := sql.NewLvRepository(SqlConnect())
 	signUpRepository := authSql.NewSignUpRepository(SqlConnect())
 	loginRepository := authSql.NewLoginRepository(SqlConnect())
 
 	// usecase
-	authoreUsecase := usecase.NewAuthorUsecase(authorRepository)
-	articleUsecase := usecase.NewArticleUsecase(authoreUsecase, aritcleRepository, database.NewTransaction(r.DB.Connection))
+	expPoolUsecase := usecase.NewExpPoolUsecase(expPoolRepository, database.NewTransaction(r.DB.Connection))
+	lvUsecase := usecase.NewLvUsecase(lvRepository, database.NewTransaction(r.DB.Connection))
+	authoreUsecase := usecase.NewAuthorUsecase(expPoolUsecase, authorRepository)
+	articleUsecase := usecase.NewArticleUsecase(authoreUsecase, expPoolUsecase, lvUsecase, aritcleRepository, database.NewTransaction(r.DB.Connection))
+
 	signUpUsecase := authUsecase.NewSignUpUsecase(signUpRepository, loginRepository)
 	loginUsecase := authUsecase.NewLoginUsecase(loginRepository)
 

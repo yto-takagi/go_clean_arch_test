@@ -7,21 +7,21 @@ import (
 
 // struct
 type User struct {
-	Id        int       `json:"id"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	UpdatedAt time.Time `json:"updated_at"`
-	CreatedAt time.Time `json:"created_at"`
+	id        int       `json:"id"`
+	email     string    `json:"email"`
+	password  string    `json:"password"`
+	updatedAt time.Time `json:"updated_at"`
+	createdAt time.Time `json:"created_at"`
 }
 
 // constructor
 func NewUser(id int, email, password string, updatedAt, createdAt time.Time) (*User, error) {
 	user := &User{
-		Id:        id,
-		Email:     email,
-		Password:  password,
-		UpdatedAt: updatedAt,
-		CreatedAt: createdAt,
+		id:        id,
+		email:     email,
+		password:  password,
+		updatedAt: updatedAt,
+		createdAt: createdAt,
 	}
 
 	return user, nil
@@ -32,11 +32,32 @@ func (user *User) Set(id int, email, password string, updatedAt, createdAt time.
 	if email == "" {
 		return errors.New("email is required")
 	}
-	user.Id = id
-	user.Email = email
-	user.Password = password
-	user.UpdatedAt = updatedAt
-	user.CreatedAt = createdAt
+	user.id = id
+	user.email = email
+	user.password = password
+	user.updatedAt = updatedAt
+	user.createdAt = createdAt
 
 	return nil
+}
+
+// getter
+func (user *User) GetId() int {
+	return user.id
+}
+
+func (user *User) GetEmail() string {
+	return user.email
+}
+
+func (user *User) GetPassword() string {
+	return user.password
+}
+
+func (user *User) GetUpdatedAt() time.Time {
+	return user.updatedAt
+}
+
+func (user *User) GetCreatedAt() time.Time {
+	return user.createdAt
 }

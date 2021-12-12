@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"go_clean_arch_test/app/article/database"
-	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/article/repository/entity"
 	form "go_clean_arch_test/app/domain/form"
 	"go_clean_arch_test/app/domain/repository"
 	"time"
@@ -24,7 +24,7 @@ func NewArticleRepository(conn *gorm.DB) repository.ArticleRepository {
 }
 
 // 全件取得
-func (articleRepository *ArticleRepository) GetAll(article []domain.Article, userId int) ([]domain.Article, error) {
+func (articleRepository *ArticleRepository) GetAll(article []entity.Article, userId int) ([]entity.Article, error) {
 	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
@@ -42,7 +42,7 @@ func (articleRepository *ArticleRepository) GetAll(article []domain.Article, use
 }
 
 // Idに紐付いたデータ取得
-func (articleRepository *ArticleRepository) GetById(article domain.Article, id int) (domain.Article, error) {
+func (articleRepository *ArticleRepository) GetById(article entity.Article, id int) (entity.Article, error) {
 	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
@@ -69,7 +69,7 @@ func (articleRepository *ArticleRepository) GetById(article domain.Article, id i
 }
 
 // Id、ユーザーIdに紐付いたデータ取得
-func (articleRepository *ArticleRepository) GetByIdAndUserId(article domain.Article, id int, userId int) (domain.Article, error) {
+func (articleRepository *ArticleRepository) GetByIdAndUserId(article entity.Article, id int, userId int) (entity.Article, error) {
 	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
@@ -96,7 +96,7 @@ func (articleRepository *ArticleRepository) GetByIdAndUserId(article domain.Arti
 }
 
 // authorId、ユーザーIdに紐付いたデータ取得
-func (articleRepository *ArticleRepository) GetByAuthorIdAndUserId(articles []domain.Article, id int, userId int) ([]domain.Article, error) {
+func (articleRepository *ArticleRepository) GetByAuthorIdAndUserId(articles []entity.Article, id int, userId int) ([]entity.Article, error) {
 	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").
@@ -123,7 +123,7 @@ func (articleRepository *ArticleRepository) GetByAuthorIdAndUserId(articles []do
 }
 
 // titleとcontentを曖昧検索
-func (articleRepository *ArticleRepository) SearchContent(articles []domain.Article, searchContent string, userId int) ([]domain.Article, error) {
+func (articleRepository *ArticleRepository) SearchContent(articles []entity.Article, searchContent string, userId int) ([]entity.Article, error) {
 	if err := articleRepository.Conn.
 		Debug().
 		Table("articles").

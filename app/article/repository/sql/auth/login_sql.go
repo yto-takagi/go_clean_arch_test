@@ -1,7 +1,7 @@
 package auth
 
 import (
-	domain "go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/article/repository/entity"
 	repository "go_clean_arch_test/app/domain/repository/auth"
 	"log"
 	"time"
@@ -20,7 +20,7 @@ func NewLoginRepository(conn *gorm.DB) repository.LoginRepository {
 }
 
 // emailに紐付いたデータ取得
-func (loginRepository *LoginRepository) GetByEmail(email string, user domain.User) (domain.User, error) {
+func (loginRepository *LoginRepository) GetByEmail(email string, user entity.User) (entity.User, error) {
 	if err := loginRepository.Conn.
 		Debug().
 		Table("users").
@@ -37,6 +37,7 @@ func (loginRepository *LoginRepository) GetByEmail(email string, user domain.Use
 	logger.Info("GetByEmail",
 		zap.Duration("elapsed", time.Now().Sub(oldTime)),
 	)
+	log.Println("user sql■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
 	log.Println(user)
 
 	return user, nil

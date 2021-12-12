@@ -17,6 +17,9 @@ type ArticleForm struct {
 
 // constructor
 func NewArticleForm(id int, title, content string, updatedAt, createdAt time.Time, authorId int) (*ArticleForm, error) {
+	if title == "" {
+		return nil, errors.New("title is required")
+	}
 	articleForm := &ArticleForm{
 		Id:        id,
 		Title:     title,

@@ -2,9 +2,11 @@ package auth
 
 import (
 	"encoding/json"
-	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/article/delivery/request"
+	"go_clean_arch_test/app/article/repository/entity"
 	auth "go_clean_arch_test/app/domain/auth"
 	repository "go_clean_arch_test/app/domain/repository/auth"
+	"log"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -14,8 +16,8 @@ import (
 
 // LoginUsecase interface
 type LoginUsecase interface {
-	GetByEmail(email string) (domain.User, error)
-	GetLoginUser(ctx *gin.Context) (domain.User, error)
+	GetByEmail(email string) (request.User, error)
+	GetLoginUser(ctx *gin.Context) (request.User, error)
 }
 
 type loginUsecase struct {
@@ -28,12 +30,18 @@ func NewLoginUsecase(loginUpRepository repository.LoginRepository) LoginUsecase 
 }
 
 // ログイン
-func (loginUsecase *loginUsecase) GetByEmail(email string) (domain.User, error) {
+func (loginUsecase *loginUsecase) GetByEmail(email string) (request.User, error) {
 
-	var user domain.User
+	var user entity.User
 	var login auth.Login
 	login.Email = email
-	userInfo, err := loginUsecase.loginUpRepository.GetByEmail(login.Email, user)
+	user, err := loginUsecase.loginUpRepository.GetByEmail(login.Email, user)
+
+	var userInfo request.User
+	userInfo.Id = user.Id
+	userInfo.Email = user.Email
+	userInfo.Password = user.Password
+
 	if err != nil {
 		return userInfo, err
 	}
@@ -42,14 +50,18 @@ func (loginUsecase *loginUsecase) GetByEmail(email string) (domain.User, error) 
 }
 
 // ログインユーザー情報取得
-func (loginUsecase *loginUsecase) GetLoginUser(ctx *gin.Context) (domain.User, error) {
+func (loginUsecase *loginUsecase) GetLoginUser(ctx *gin.Context) (request.User, error) {
 	accessToken := ctx.Request.Header.Get("accessToken")
 
 	session := sessions.Default(ctx)
+	log.Print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■session: ")
+	log.Print(session)
 	// Json文字列がinterdace型で格納されている。dproxyのライブラリを使用して値を取り出す
 	loginUserJson, err := dproxy.New(session.Get(accessToken)).String()
+	log.Print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■loginUserJson: ")
+	log.Print(loginUserJson)
 
-	var loginInfo domain.User
+	var loginInfo request.User
 	if err != nil {
 		ctx.Status(http.StatusUnauthorized)
 		ctx.Abort()
@@ -63,6 +75,8 @@ func (loginUsecase *loginUsecase) GetLoginUser(ctx *gin.Context) (domain.User, e
 			ctx.Next()
 		}
 	}
+	log.Print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■loginInfo: ")
+	log.Print(loginInfo.Id)
 	return loginInfo, nil
 
 }

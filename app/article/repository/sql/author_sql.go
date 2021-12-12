@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"go_clean_arch_test/app/article/database"
-	"go_clean_arch_test/app/domain"
+	"go_clean_arch_test/app/article/repository/entity"
 	"go_clean_arch_test/app/domain/repository"
 	"time"
 
@@ -23,7 +23,7 @@ func NewAuthorRepository(conn *gorm.DB) repository.AuthorRepository {
 }
 
 // ユーザーIDに紐づくデータ取得
-func (authorRepository *AuthorRepository) GetAuthorByUser(author []domain.Author, userId int) ([]domain.Author, error) {
+func (authorRepository *AuthorRepository) GetAuthorByUser(author []entity.Author, userId int) ([]entity.Author, error) {
 	if err := authorRepository.Conn.
 		Debug().
 		Table("authors").
@@ -41,7 +41,7 @@ func (authorRepository *AuthorRepository) GetAuthorByUser(author []domain.Author
 }
 
 // AuthorId、ユーザーIdに紐付いたデータ取得
-func (authorRepository *AuthorRepository) GetAuthorByAuthorIdAndUserId(author domain.Author, id int, userId int) (domain.Author, error) {
+func (authorRepository *AuthorRepository) GetAuthorByAuthorIdAndUserId(author entity.Author, id int, userId int) (entity.Author, error) {
 	if err := authorRepository.Conn.
 		Debug().
 		Table("authors").
@@ -67,7 +67,7 @@ func (authorRepository *AuthorRepository) GetAuthorByAuthorIdAndUserId(author do
 }
 
 // カテゴリ名に紐付いたデータ取得
-func (authorRepository *AuthorRepository) GetByAuthorName(author domain.Author, name string, userId int) (domain.Author, error) {
+func (authorRepository *AuthorRepository) GetByAuthorName(author entity.Author, name string, userId int) (entity.Author, error) {
 	if err := authorRepository.Conn.
 		Debug().
 		Table("authors").
@@ -93,7 +93,7 @@ func (authorRepository *AuthorRepository) GetByAuthorName(author domain.Author, 
 }
 
 // 新規登録
-func (authorRepository *AuthorRepository) InputByAuthor(ctx context.Context, author *domain.Author) error {
+func (authorRepository *AuthorRepository) InputByAuthor(ctx context.Context, author *entity.Author) error {
 	dao, ok := database.GetTx(ctx)
 	if !ok {
 		dao = authorRepository.Conn
@@ -109,7 +109,7 @@ func (authorRepository *AuthorRepository) InputByAuthor(ctx context.Context, aut
 }
 
 // 更新
-func (authorRepository *AuthorRepository) UpdateByAuthor(ctx context.Context, author *domain.Author) error {
+func (authorRepository *AuthorRepository) UpdateByAuthor(ctx context.Context, author *entity.Author) error {
 	dao, ok := database.GetTx(ctx)
 	if !ok {
 		dao = authorRepository.Conn
@@ -126,7 +126,7 @@ func (authorRepository *AuthorRepository) UpdateByAuthor(ctx context.Context, au
 }
 
 // 削除
-func (authorRepository *AuthorRepository) DeleteByAuthor(ctx context.Context, author *domain.Author, userId int) error {
+func (authorRepository *AuthorRepository) DeleteByAuthor(ctx context.Context, author *entity.Author, userId int) error {
 	dao, ok := database.GetTx(ctx)
 	if !ok {
 		dao = authorRepository.Conn

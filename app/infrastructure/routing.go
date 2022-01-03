@@ -1,14 +1,14 @@
 package infrastructure
 
 import (
-	"go_clean_arch_test/app/article/database"
-	"go_clean_arch_test/app/article/delivery"
-	authDelivery "go_clean_arch_test/app/article/delivery/auth"
-	"go_clean_arch_test/app/article/repository/sql"
-	authSql "go_clean_arch_test/app/article/repository/sql/auth"
-	"go_clean_arch_test/app/article/usecase"
-	authUsecase "go_clean_arch_test/app/article/usecase/auth"
 	middleware "go_clean_arch_test/app/infrastructure/auth"
+	"go_clean_arch_test/app/interfaces/database"
+	"go_clean_arch_test/app/interfaces/database/repository/sql"
+	authSql "go_clean_arch_test/app/interfaces/database/repository/sql/auth"
+	"go_clean_arch_test/app/interfaces/delivery"
+	authDelivery "go_clean_arch_test/app/interfaces/delivery/auth"
+	"go_clean_arch_test/app/usecase"
+	authUsecase "go_clean_arch_test/app/usecase/auth"
 	"time"
 
 	"github.com/gin-contrib/cors"

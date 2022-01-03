@@ -43,7 +43,7 @@
 |:------|:------|:------|
 | Entities | domain | ドメイン(システムが扱う業務領域)に関する値と振る舞いを持つ |
 | Frameworks & Drivers | infrastructure | 技術的関心ごとを扱うレイヤで具体的な技術に関する処理を書く |
-| Interface | delivery | プレゼンタとして、どのようにデータが提示されるかを決定する |
+| Interface | interfaces | プレゼンタとして、どのようにデータが提示されるかを決定する |
 | Use cases | usecase | アプリケーション固有のビジネスルール |
 
 ### トランザクション
